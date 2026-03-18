@@ -1,8 +1,8 @@
-# Workspace
+# Amiri Phone - Algeria Ecommerce
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+متجر إلكتروني احترافي كامل لمتجر Amiri Phone لبيع الهواتف الذكية في الجزائر.
 
 ## Stack
 
@@ -10,6 +10,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Node.js version**: 24
 - **Package manager**: pnpm
 - **TypeScript version**: 5.9
+- **Frontend**: React + Vite + Tailwind CSS
 - **API framework**: Express 5
 - **Database**: PostgreSQL + Drizzle ORM
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
@@ -20,77 +21,101 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 
 ```text
 artifacts-monorepo/
-├── artifacts/              # Deployable applications
-│   └── api-server/         # Express API server
-├── lib/                    # Shared libraries
+├── artifacts/
+│   ├── api-server/         # Express API server (port 8080 → /api)
+│   ├── amiri-phone/        # React+Vite frontend (port 18251 → /)
+│   └── mockup-sandbox/     # Design sandbox
+├── lib/
 │   ├── api-spec/           # OpenAPI spec + Orval codegen config
 │   ├── api-client-react/   # Generated React Query hooks
 │   ├── api-zod/            # Generated Zod schemas from OpenAPI
 │   └── db/                 # Drizzle ORM schema + DB connection
-├── scripts/                # Utility scripts (single workspace package)
-│   └── src/                # Individual .ts scripts, run via `pnpm --filter @workspace/scripts run <script>`
-├── pnpm-workspace.yaml     # pnpm workspace (artifacts/*, lib/*, lib/integrations/*, scripts)
-├── tsconfig.base.json      # Shared TS options (composite, bundler resolution, es2022)
-├── tsconfig.json           # Root TS project references
-└── package.json            # Root package with hoisted devDeps
+├── scripts/
+│   └── src/seed.ts         # Database seeding script
 ```
 
-## TypeScript & Composite Projects
+## Store Info
 
-Every package extends `tsconfig.base.json` which sets `composite: true`. The root `tsconfig.json` lists all packages as project references. This means:
+- **Store Name**: Amiri Phone (أميري فون)
+- **Location**: 89 Rue Mahmoud KHODJAT EL DJELD, Bir Mourad Raïs, Alger (inside MANTIZI)
+- **Phone**: 0557 32 54 17
+- **Hours**: Open daily until 23:30
 
-- **Always typecheck from the root** — run `pnpm run typecheck` (which runs `tsc --build --emitDeclarationOnly`). This builds the full dependency graph so that cross-package imports resolve correctly. Running `tsc` inside a single package will fail if its dependencies haven't been built yet.
-- **`emitDeclarationOnly`** — we only emit `.d.ts` files during typecheck; actual JS bundling is handled by esbuild/tsx/vite...etc, not `tsc`.
-- **Project references** — when package A depends on package B, A's `tsconfig.json` must list B in its `references` array. `tsc --build` uses this to determine build order and skip up-to-date packages.
+## Admin Access
 
-## Root Scripts
+- URL: `/admin/login`
+- Username: `admin`
+- Password: `amiri2024`
 
-- `pnpm run build` — runs `typecheck` first, then recursively runs `build` in all packages that define it
-- `pnpm run typecheck` — runs `tsc --build --emitDeclarationOnly` using project references
+## Features
 
-## Packages
+### Frontend (React + Vite)
+- **Home Page**: Hero section, featured products, categories, countdown timer, reviews
+- **Products Page**: Product grid with filter (category, price) + search
+- **Product Detail**: Images, specs, reviews, related products, countdown timer
+- **Cart**: React Context, localStorage persistence, cart badge
+- **Checkout**: Customer form + 48 Wilaya selector + Commune selector + COD only
+- **Order Success**: Confirmation with order number
+- **Admin Dashboard**: Login, stats, products CRUD, order management
 
-### `artifacts/api-server` (`@workspace/api-server`)
+### Backend (Express + PostgreSQL)
+- **Products API**: CRUD with category filter, search, pagination
+- **Categories API**: CRUD
+- **Orders API**: Create orders, update status (pending/confirmed/shipped/delivered/returned)
+- **Wilayas API**: 48 wilayas with shipping costs + communes
+- **Reviews API**: Create/list reviews
+- **Admin API**: Login (JWT), dashboard stats
+- **Settings API**: Store settings management
 
-Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` for request and response validation and `@workspace/db` for persistence.
+### Algeria System
+- 48 Wilayas with individual shipping costs
+- Commune database for major wilayas
+- Paiement à la livraison (COD) only
+- Arabic + French UI support
 
-- Entry: `src/index.ts` — reads `PORT`, starts Express
-- App setup: `src/app.ts` — mounts CORS, JSON/urlencoded parsing, routes at `/api`
-- Routes: `src/routes/index.ts` mounts sub-routers; `src/routes/health.ts` exposes `GET /health` (full path: `/api/health`)
-- Depends on: `@workspace/db`, `@workspace/api-zod`
-- `pnpm --filter @workspace/api-server run dev` — run the dev server
-- `pnpm --filter @workspace/api-server run build` — production esbuild bundle (`dist/index.cjs`)
-- Build bundles an allowlist of deps (express, cors, pg, drizzle-orm, zod, etc.) and externalizes the rest
+### Integrations (via env vars)
+- **Telegram Bot**: Order notifications via `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID`
+- **WhatsApp**: Order notifications via `WHATSAPP_TOKEN` + `WHATSAPP_PHONE_NUMBER_ID` + `WHATSAPP_NUMBER`
+- **Facebook Pixel**: Configurable via admin settings
+- **TikTok Pixel**: Configurable via admin settings
+- **Google Sheets**: Store ID configurable via admin settings
 
-### `lib/db` (`@workspace/db`)
+## Environment Variables
 
-Database layer using Drizzle ORM with PostgreSQL. Exports a Drizzle client instance and schema models.
+```env
+# Database (auto-provisioned by Replit)
+DATABASE_URL=...
 
-- `src/index.ts` — creates a `Pool` + Drizzle instance, exports schema
-- `src/schema/index.ts` — barrel re-export of all models
-- `src/schema/<modelname>.ts` — table definitions with `drizzle-zod` insert schemas (no models definitions exist right now)
-- `drizzle.config.ts` — Drizzle Kit config (requires `DATABASE_URL`, automatically provided by Replit)
-- Exports: `.` (pool, db, schema), `./schema` (schema only)
+# Admin Auth
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=amiri2024
+JWT_SECRET=amiri-phone-secret-2024
 
-Production migrations are handled by Replit when publishing. In development, we just use `pnpm --filter @workspace/db run push`, and we fallback to `pnpm --filter @workspace/db run push-force`.
+# Telegram Bot Notifications
+TELEGRAM_BOT_TOKEN=your_token
+TELEGRAM_CHAT_ID=your_chat_id
 
-### `lib/api-spec` (`@workspace/api-spec`)
+# WhatsApp Notifications
+WHATSAPP_TOKEN=your_token
+WHATSAPP_PHONE_NUMBER_ID=your_id
+WHATSAPP_NUMBER=213XXXXXXXXX
+```
 
-Owns the OpenAPI 3.1 spec (`openapi.yaml`) and the Orval config (`orval.config.ts`). Running codegen produces output into two sibling packages:
+## Running the Seed
 
-1. `lib/api-client-react/src/generated/` — React Query hooks + fetch client
-2. `lib/api-zod/src/generated/` — Zod schemas
+```bash
+pnpm --filter @workspace/scripts run seed
+```
 
-Run codegen: `pnpm --filter @workspace/api-spec run codegen`
+## API Codegen
 
-### `lib/api-zod` (`@workspace/api-zod`)
+After changing `lib/api-spec/openapi.yaml`:
+```bash
+pnpm --filter @workspace/api-spec run codegen
+```
 
-Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used by `api-server` for response validation.
+## DB Schema Push
 
-### `lib/api-client-react` (`@workspace/api-client-react`)
-
-Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
-
-### `scripts` (`@workspace/scripts`)
-
-Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
+```bash
+pnpm --filter @workspace/db run push
+```

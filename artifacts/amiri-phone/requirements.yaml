@@ -1,0 +1,19 @@
+packages:
+  "framer-motion": "Smooth page transitions and micro-interactions for a premium feel"
+  "date-fns": "Formatting dates for reviews and orders"
+  "lucide-react": "Icons for UI navigation and product features"
+  "clsx": "Utility for Tailwind classes construction"
+  "tailwind-merge": "Utility for resolving Tailwind class conflicts safely"
+
+images:
+  - path: "artifacts/amiri-phone/public/images/hero-bg.png"
+    description: "Minimalist, sleek abstract background with subtle deep blue and silver gradients, resembling a premium tech presentation or smartphone glass reflection"
+    aspect_ratio: "16:9"
+  - path: "artifacts/amiri-phone/public/images/logo.png"
+    description: "Minimalist modern letter 'A' logo mark in striking Apple blue color (#007AFF) on transparent background, sleek and professional"
+    aspect_ratio: "1:1"
+
+notes:
+  - The app uses @workspace/api-client-react for all API interactions
+  - Cart state is managed via React Context and persisted to localStorage
+  - Admin auth uses simple token in localStorage
