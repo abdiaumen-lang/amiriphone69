@@ -16,13 +16,16 @@ import NotFound from "@/pages/not-found";
 // Admin Pages
 import AdminLogin from "@/pages/admin/Login";
 import AdminDashboard from "@/pages/admin/Dashboard";
-import AdminProducts from "@/pages/admin/ManageProducts";
+import ManageProducts from "@/pages/admin/ManageProducts";
+import ManageOrders from "@/pages/admin/ManageOrders";
+import AdminSettings from "@/pages/admin/AdminSettings";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: false,
+      retry: 1,
       refetchOnWindowFocus: false,
+      staleTime: 30_000,
     },
   },
 });
@@ -37,14 +40,14 @@ function Router() {
       <Route path="/cart" component={Cart} />
       <Route path="/checkout" component={Checkout} />
       <Route path="/order-success" component={OrderSuccess} />
-      
+
       {/* Admin Routes */}
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin" component={AdminDashboard} />
-      <Route path="/admin/products" component={AdminProducts} />
-      <Route path="/admin/orders" component={AdminDashboard} /> {/* Reuse for now as placeholder for completeness */}
-      <Route path="/admin/settings" component={AdminDashboard} />
-      
+      <Route path="/admin/products" component={ManageProducts} />
+      <Route path="/admin/orders" component={ManageOrders} />
+      <Route path="/admin/settings" component={AdminSettings} />
+
       {/* 404 */}
       <Route component={NotFound} />
     </Switch>
