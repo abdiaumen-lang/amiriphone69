@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useRoute } from "wouter";
 import { AppLayout } from "@/components/Layout";
 import { PageTransition, Button, Badge } from "@/components/UI";
-import { formatDZD } from "@/lib/utils";
+import { cn, formatDZD } from "@/lib/utils";
 import { ShoppingCart, Star, Shield, Truck, RotateCcw, Clock } from "lucide-react";
 import { useCart } from "@/store/Store";
 import { useToast } from "@/hooks/use-toast";
