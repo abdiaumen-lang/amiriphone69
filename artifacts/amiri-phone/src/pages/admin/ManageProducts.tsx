@@ -9,6 +9,7 @@ import type { Product } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit2, Trash2, X, Image as ImageIcon, Star, Package, Tag } from "lucide-react";
+import { ImageUploader } from "@/components/ImageUploader";
 
 const EMPTY_FORM = {
   name: "", nameAr: "", nameFr: "",
@@ -178,39 +179,13 @@ function ProductForm({ initial, onClose }: { initial: Product | null; onClose: (
 
           {tab === "media" && (
             <>
-              <Field label="URLs des images" hint="Une URL par champ. La première image est l'image principale.">
-                <div className="space-y-2">
-                  {form.images.map((url, i) => (
-                    <div key={i} className="flex gap-2 items-center">
-                      <TextInput value={url} onChange={v => { const imgs = [...form.images]; imgs[i] = v; set("images", imgs); }} placeholder="https://..." />
-                      {url && <img src={url} className="w-10 h-10 object-contain rounded-lg border border-border bg-secondary shrink-0" />}
-                      {form.images.length > 1 && (
-                        <button onClick={() => set("images", form.images.filter((_, j) => j !== i))}
-                          className="p-1.5 hover:bg-destructive/10 rounded-lg text-destructive shrink-0"><X className="w-4 h-4" /></button>
-                      )}
-                    </div>
-                  ))}
-                  <Button variant="outline" size="sm" onClick={() => set("images", [...form.images, ""])} className="gap-1.5">
-                    <Plus className="w-4 h-4" /> Ajouter une image
-                  </Button>
-                </div>
+              <Field label="Images du produit" hint="Cliquez sur + ou glissez des images. La première image sera l'image principale.">
+                <ImageUploader
+                  images={form.images.filter(Boolean)}
+                  onChange={imgs => set("images", imgs.length ? imgs : [""])}
+                  maxImages={8}
+                />
               </Field>
-
-              <div className="mt-4">
-                <div className="text-sm font-semibold mb-3">Aperçu des images</div>
-                <div className="flex flex-wrap gap-3">
-                  {form.images.filter(Boolean).map((url, i) => (
-                    <div key={i} className="w-24 h-24 rounded-xl border border-border bg-secondary overflow-hidden">
-                      <img src={url} className="w-full h-full object-contain" onError={e => { (e.target as HTMLImageElement).src = ""; }} />
-                    </div>
-                  ))}
-                  {!form.images.filter(Boolean).length && (
-                    <div className="w-24 h-24 rounded-xl border-2 border-dashed border-border flex items-center justify-center text-muted-foreground">
-                      <ImageIcon className="w-8 h-8" />
-                    </div>
-                  )}
-                </div>
-              </div>
 
               <Field label="Spécifications techniques" hint="Format: Clé: Valeur (une par ligne). Ex: Écran: 6.7 pouces">
                 <textarea rows={10} value={specsText} onChange={e => setSpecsText(e.target.value)}

@@ -7,6 +7,7 @@ import wilayasRouter from "./wilayas.js";
 import reviewsRouter from "./reviews.js";
 import adminRouter from "./admin.js";
 import settingsRouter from "./settings.js";
+import uploadRouter from "./upload.js";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use("/wilayas", wilayasRouter);
 router.use("/reviews", reviewsRouter);
 router.use("/admin", adminRouter);
 router.use("/settings", settingsRouter);
+router.use("/upload", uploadRouter);
 
 export default router;

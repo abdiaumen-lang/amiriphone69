@@ -903,6 +903,7 @@ components:
 
     StoreSettings:
       type: object
+      additionalProperties: true
       properties:
         storeName:
           type: string
@@ -923,6 +924,24 @@ components:
           nullable: true
         primaryColor:
           type: string
+        accentColor:
+          type: string
+          nullable: true
+        successColor:
+          type: string
+          nullable: true
+        dangerColor:
+          type: string
+          nullable: true
+        fontFamily:
+          type: string
+          nullable: true
+        fontSize:
+          type: string
+          nullable: true
+        borderRadius:
+          type: string
+          nullable: true
         telegramBotToken:
           type: string
           nullable: true
@@ -932,26 +951,57 @@ components:
         whatsappNumber:
           type: string
           nullable: true
+        whatsappToken:
+          type: string
+          nullable: true
+        whatsappPhoneId:
+          type: string
+          nullable: true
         facebookPixelId:
           type: string
           nullable: true
         tiktokPixelId:
           type: string
           nullable: true
+        gaId:
+          type: string
+          nullable: true
         googleSheetsId:
+          type: string
+          nullable: true
+        yalidineKey:
+          type: string
+          nullable: true
+        zrExpressKey:
+          type: string
+          nullable: true
+        maystroKey:
           type: string
           nullable: true
         defaultShippingCost:
           type: number
+          nullable: true
         freeShippingThreshold:
           type: number
           nullable: true
         maintenanceMode:
           type: boolean
+          nullable: true
         seoTitle:
           type: string
           nullable: true
         seoDescription:
           type: string
           nullable: true
-      required: [storeName, storePhone, storeAddress, primaryColor, defaultShippingCost, maintenanceMode]
+        features:
+          type: object
+          additionalProperties: true
+          nullable: true
+        pageContent:
+          type: object
+          additionalProperties: true
+          nullable: true
+        uiLabels:
+          type: object
+          additionalProperties: true
+          nullable: true

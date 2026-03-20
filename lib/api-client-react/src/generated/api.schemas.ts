@@ -257,26 +257,48 @@ export interface AdminStats {
   dailySales: AdminStatsDailySalesItem[];
 }
 
+export type StoreSettingsFeatures = { [key: string]: unknown } | null;
+
+export type StoreSettingsPageContent = { [key: string]: unknown } | null;
+
+export type StoreSettingsUiLabels = { [key: string]: unknown } | null;
+
 export interface StoreSettings {
-  storeName: string;
+  storeName?: string;
   storeNameAr?: string;
-  storePhone: string;
+  storePhone?: string;
   storePhone2?: string | null;
-  storeAddress: string;
+  storeAddress?: string;
   storeAddressAr?: string | null;
   storeLogo?: string | null;
-  primaryColor: string;
+  primaryColor?: string;
+  accentColor?: string | null;
+  successColor?: string | null;
+  dangerColor?: string | null;
+  fontFamily?: string | null;
+  fontSize?: string | null;
+  borderRadius?: string | null;
   telegramBotToken?: string | null;
   telegramChatId?: string | null;
   whatsappNumber?: string | null;
+  whatsappToken?: string | null;
+  whatsappPhoneId?: string | null;
   facebookPixelId?: string | null;
   tiktokPixelId?: string | null;
+  gaId?: string | null;
   googleSheetsId?: string | null;
-  defaultShippingCost: number;
+  yalidineKey?: string | null;
+  zrExpressKey?: string | null;
+  maystroKey?: string | null;
+  defaultShippingCost?: number | null;
   freeShippingThreshold?: number | null;
-  maintenanceMode: boolean;
+  maintenanceMode?: boolean | null;
   seoTitle?: string | null;
   seoDescription?: string | null;
+  features?: StoreSettingsFeatures;
+  pageContent?: StoreSettingsPageContent;
+  uiLabels?: StoreSettingsUiLabels;
+  [key: string]: unknown;
 }
 
 export type ListProductsParams = {
