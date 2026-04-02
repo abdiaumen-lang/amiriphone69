@@ -48,19 +48,19 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-8">
-        <Card className="p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <Card className="p-4 sm:p-6">
           <h2 className="text-xl font-semibold mb-6">Dernières Commandes</h2>
           <div className="space-y-4">
             {stats.recentOrders?.map(order => (
-              <div key={order.id} className="flex items-center justify-between p-4 bg-secondary/50 rounded-xl border border-border">
+              <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-secondary/50 rounded-xl border border-border gap-3">
                 <div>
                   <div className="font-semibold">{order.customerName}</div>
                   <div className="text-sm text-muted-foreground">{order.orderNumber} - {order.wilayaName}</div>
                 </div>
-                <div className="text-right">
+                <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2">
                   <div className="font-bold text-primary">{formatDZD(order.total)}</div>
-                  <div className="text-xs uppercase font-semibold mt-1 px-2 py-0.5 bg-background rounded text-muted-foreground inline-block">
+                  <div className="text-[10px] uppercase font-semibold px-2 py-0.5 bg-background rounded text-muted-foreground inline-block">
                     {order.status}
                   </div>
                 </div>
@@ -72,15 +72,15 @@ export default function AdminDashboard() {
           </div>
         </Card>
 
-        <Card className="p-6">
+        <Card className="p-4 sm:p-6">
           <h2 className="text-xl font-semibold mb-6">Ventes par Wilaya</h2>
           <div className="space-y-4">
             {stats.ordersByWilaya?.map((w, i) => (
-              <div key={i} className="flex items-center justify-between">
-                <div className="font-medium">{w.wilaya}</div>
-                <div className="flex items-center gap-4">
-                  <span className="text-muted-foreground">{w.count} cmdes</span>
-                  <span className="font-bold">{formatDZD(w.revenue)}</span>
+              <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-border/50 pb-3 last:border-0 gap-1">
+                <div className="font-medium text-sm sm:text-base">{w.wilaya}</div>
+                <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
+                  <span className="text-xs sm:text-sm text-muted-foreground">{w.count} cmdes</span>
+                  <span className="font-bold text-sm sm:text-base">{formatDZD(w.revenue)}</span>
                 </div>
               </div>
             ))}

@@ -25,13 +25,13 @@ export default function ManageReviews() {
 
   // Fetch Products for selection
   const { data: productsData } = useListProducts({ 
-    params: { search: searchTerm, limit: 10 } 
+    search: searchTerm, limit: 10
   });
 
   // Fetch Reviews for selected product
   const { data: reviews, isLoading: isLoadingReviews } = useListReviews(
     { productId: selectedProduct?.id || 0 },
-    { query: { enabled: !!selectedProduct } }
+    { query: { enabled: !!selectedProduct } as any }
   );
 
   const { mutate: createReview, isPending: isCreating } = useCreateReview({
@@ -142,15 +142,15 @@ export default function ManageReviews() {
             )}
 
             {selectedProduct && (
-              <div className="flex items-center justify-between p-4 bg-primary/10 rounded-2xl border border-primary/20 animate-in fade-in slide-in-from-top-2">
-                <div className="flex items-center gap-4">
-                  <img src={getSafeImageUrl(selectedProduct.images[0])} className="w-16 h-16 rounded-xl object-cover shadow-md" alt="" />
-                  <div>
-                    <h3 className="font-bold text-lg">{selectedProduct.name}</h3>
-                    <p className="text-sm text-primary/80">Affichage des commentaires ({reviews?.length || 0})</p>
+              <div className="flex flex-col sm:flex-row items-center justify-between p-4 bg-primary/10 rounded-2xl border border-primary/20 animate-in fade-in slide-in-from-top-2 gap-4">
+                <div className="flex items-center gap-4 w-full sm:w-auto">
+                  <img src={getSafeImageUrl(selectedProduct.images[0])} className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl object-cover shadow-md" alt="" />
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-base sm:text-lg truncate">{selectedProduct.name}</h3>
+                    <p className="text-xs sm:text-sm text-primary/80">Affichage des commentaires ({reviews?.length || 0})</p>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => setSelectedProduct(null)}>Changer</Button>
+                <Button variant="outline" size="sm" onClick={() => setSelectedProduct(null)} className="w-full sm:w-auto">Changer</Button>
               </div>
             )}
           </CardContent>
@@ -158,9 +158,9 @@ export default function ManageReviews() {
 
         {selectedProduct && (
           <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <h2 className="text-2xl font-bold">Commentaires Clients</h2>
-              <Button onClick={() => setIsAddingReview(!isAddingReview)} className="rounded-full shadow-lg shadow-primary/20">
+              <Button onClick={() => setIsAddingReview(!isAddingReview)} className="rounded-full shadow-lg shadow-primary/20 w-full sm:w-auto">
                 {isAddingReview ? "Annuler" : <><Plus className="w-4 h-4 mr-2" /> Ajouter un Avis</>}
               </Button>
             </div>
