@@ -2,10 +2,14 @@ import { Link, useLocation } from "wouter";
 import { useCart } from "@/store/Store";
 import { ShoppingCart, Menu, X, Smartphone, CheckCircle, Truck, Shield } from "lucide-react";
 import { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
+import { cn, getSafeImageUrl } from "@/lib/utils";
+import { useGetSettings, useListCategories } from "@workspace/api-client-react";
 
 export function Navbar() {
+  const { data } = useGetSettings();
+  const settings = data as { storeLogo?: string; storeName?: string } | undefined;
   const { totalItems } = useCart();
+  const { data: categories } = useListCategories();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [location] = useLocation();
@@ -31,11 +35,13 @@ export function Navbar() {
         
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-display font-bold text-xl shadow-lg shadow-primary/25 group-hover:scale-105 transition-transform">
-            A
-          </div>
-          <span className={cn("font-display font-bold text-xl tracking-tight transition-colors", isScrolled ? "text-foreground" : "text-foreground")}>
-            Amiri Phone
+          <img 
+            src={getSafeImageUrl(settings?.storeLogo || "/images/logo.png")} 
+            alt="Logo" 
+            className="w-10 h-10 object-contain max-h-10 rounded-xl shadow-lg shadow-primary/10 group-hover:scale-105 transition-transform" 
+          />
+          <span className={cn("font-display font-bold text-xl tracking-tight transition-colors truncate max-w-[50vw]", isScrolled ? "text-foreground" : "text-foreground")}>
+            {settings?.storeName || "Amiri Phone"}
           </span>
         </Link>
 
@@ -73,15 +79,42 @@ export function Navbar() {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full glass border-t border-border/50 p-4 flex flex-col gap-4 animate-in slide-in-from-top-4">
-          {navLinks.map(link => (
-            <Link key={link.path} href={link.path} onClick={() => setMobileMenuOpen(false)} className={cn(
-              "block p-3 rounded-xl text-base font-medium",
-              location === link.path ? "bg-primary/10 text-primary" : "text-foreground hover:bg-secondary"
-            )}>
-              {link.name}
-            </Link>
-          ))}
+        <div className="md:hidden absolute top-full left-0 w-full glass border-t border-border/50 p-4 flex flex-col gap-4 animate-in slide-in-from-top-4 max-h-[85vh] overflow-y-auto shadow-2xl">
+          <div className="space-y-2">
+            {navLinks.map(link => (
+              <Link key={link.path} href={link.path} onClick={() => setMobileMenuOpen(false)} className={cn(
+                "block p-3 rounded-xl text-base font-medium",
+                location === link.path ? "bg-primary/10 text-primary" : "text-foreground hover:bg-secondary"
+              )}>
+                {link.name}
+              </Link>
+            ))}
+          </div>
+
+          {categories && categories.length > 0 && (
+            <div className="pt-4 mt-2 border-t border-border/50">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4 px-2">Catégories</h3>
+              <div className="grid grid-cols-2 gap-3 pb-8">
+                {categories.map(cat => (
+                  <Link 
+                    key={cat.id} 
+                    href={`/products?category=${cat.name}`} 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex flex-col items-center justify-center gap-3 p-4 bg-background/50 border border-border rounded-2xl hover:border-primary/50 hover:bg-background transition-colors active:scale-95"
+                  >
+                    {cat.icon ? (
+                      <img src={getSafeImageUrl(cat.icon)} alt={cat.name} className="w-10 h-10 object-contain drop-shadow-sm" />
+                    ) : (
+                      <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center">
+                        <span className="font-bold text-muted-foreground">#</span>
+                      </div>
+                    )}
+                    <span className="text-sm font-medium text-center line-clamp-1 break-all px-1 leading-tight">{cat.nameAr || cat.name}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </header>
@@ -89,6 +122,8 @@ export function Navbar() {
 }
 
 export function Footer() {
+  const { data } = useGetSettings();
+  const settings = data as { storeLogo?: string; storeName?: string; googleMapsUrl?: string } | undefined;
   return (
     <footer className="bg-white border-t border-border pt-16 pb-8 mt-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -96,9 +131,14 @@ export function Footer() {
           
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-display font-bold">A</div>
-              <span className="font-display font-bold text-xl">Amiri Phone</span>
+              <img 
+                src={getSafeImageUrl(settings?.storeLogo || "/images/logo.png")} 
+                alt="Logo" 
+                className="w-12 h-12 object-contain max-h-12 mb-4 drop-shadow-md" 
+              />
+              <span className="font-display font-bold text-xl mb-4">{settings?.storeName || "Amiri Phone"}</span>
             </div>
+
             <p className="text-muted-foreground text-sm leading-relaxed">
               Votre destination premium pour les smartphones et accessoires en Algérie. Les meilleurs prix, garantis.
             </p>
@@ -140,7 +180,7 @@ export function Footer() {
         </div>
 
         <div className="pt-8 border-t border-border text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} Amiri Phone. Tous droits réservés.
+          © {new Date().getFullYear()} {settings?.storeName || "Amiri Phone"}. Tous droits réservés.
         </div>
       </div>
     </footer>
@@ -148,25 +188,74 @@ export function Footer() {
 }
 
 export function WhatsAppFAB() {
+  const { data } = useGetSettings();
+  const settings = data as { whatsappNumber?: string; storePhone?: string } | undefined;
+  const phone = settings?.whatsappNumber || settings?.storePhone || "213557325417";
+
   return (
     <a
-      href="https://wa.me/213557325417"
+      href={`https://wa.me/${phone.replace(/\s+/g, '')}`}
       target="_blank"
       rel="noopener noreferrer"
       className="fixed bottom-6 right-6 w-14 h-14 bg-[#25D366] text-white rounded-full flex items-center justify-center shadow-lg shadow-[#25D366]/30 hover:scale-110 hover:-translate-y-1 transition-all duration-300 z-50 group"
       aria-label="Contactez-nous sur WhatsApp"
     >
-      <svg viewBox="0 0 24 24" className="w-8 h-8 fill-current">
-        <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.711.92 2.8.92h.004c3.18 0 5.767-2.587 5.767-5.766 0-3.18-2.586-5.762-5.766-5.762zm3.352 8.128c-.147.416-.902.8-1.284.853-.336.046-.728.082-2.313-.574-1.92-1.043-3.136-3.037-3.232-3.188-.091-.146-.767-1.026-.767-1.947 0-.92.474-1.378.641-1.558.167-.182.364-.228.484-.228.121 0 .242 0 .341.004.106.005.239-.038.373.282.146.347.502 1.226.547 1.322.046.095.076.205.016.342-.061.137-.091.223-.182.333-.091.11-.19.232-.273.324-.091.096-.186.198-.077.387.11.192.486.804 1.1 1.348.793.704 1.402.923 1.597 1.02.196.096.31.082.425-.046.115-.128.497-.584.628-.784.132-.2.264-.169.444-.105.18.068 1.144.542 1.34.639.197.096.326.146.374.228.046.082.046.479-.101.895z"/>
+      <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
       </svg>
       <span className="absolute right-full mr-4 bg-white text-foreground px-3 py-1 rounded-lg text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-md pointer-events-none">
-        Besoin d'aide ?
+        WhatsApp
+      </span>
+    </a>
+  );
+}
+
+export function TelegramFAB() {
+  const { data } = useGetSettings();
+  const settings = data as { telegramUsername?: string } | undefined;
+  if (!settings?.telegramUsername) return null;
+
+  return (
+    <a
+      href={`https://t.me/${settings.telegramUsername}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="fixed bottom-24 right-6 w-14 h-14 bg-[#0088cc] text-white rounded-full flex items-center justify-center shadow-lg shadow-[#0088cc]/30 hover:scale-110 hover:-translate-y-1 transition-all duration-300 z-50 group"
+      aria-label="Contactez-nous sur Telegram"
+    >
+      <svg viewBox="0 0 24 24" className="w-8 h-8 fill-current">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2-0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.13-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .33z"/>
+      </svg>
+      <span className="absolute right-full mr-4 bg-white text-foreground px-3 py-1 rounded-lg text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-md pointer-events-none">
+        Telegram
       </span>
     </a>
   );
 }
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
+  const { data } = useGetSettings();
+  const settings = data as Record<string, any> | undefined;
+
+  useEffect(() => {
+    if (!settings) return;
+    const root = document.documentElement;
+    
+    if (settings.primaryColor) {
+      root.style.setProperty("--primary-override", settings.primaryColor);
+      root.style.setProperty("--ring", settings.primaryColor);
+    }
+    
+    if (settings.borderRadius) {
+      root.style.setProperty("--radius-override", settings.borderRadius);
+    }
+    
+    if (settings.fontFamily) {
+      root.style.setProperty("--font-sans-override", `'${settings.fontFamily}', sans-serif`);
+      root.style.setProperty("--font-display-override", `'${settings.fontFamily}', sans-serif`);
+    }
+  }, [settings]);
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -175,6 +264,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </main>
       <Footer />
       <WhatsAppFAB />
+      <TelegramFAB />
     </div>
   );
 }

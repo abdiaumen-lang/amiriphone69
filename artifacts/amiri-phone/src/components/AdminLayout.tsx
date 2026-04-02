@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/store/Store";
 import {
   LayoutDashboard, Smartphone, ShoppingBag, Settings, LogOut,
-  Palette, Store, ToggleLeft, Plug, FileText, ChevronLeft, Menu, X
+  Palette, Store, ToggleLeft, Plug, FileText, ChevronLeft, Menu, X, FolderTree, Star
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageTransition } from "./UI";
@@ -11,7 +11,9 @@ import { useState } from "react";
 const MENU = [
   { group: "Principal", items: [
     { name: "Dashboard",   path: "/admin",          icon: LayoutDashboard },
+    { name: "Catégories",  path: "/admin/categories", icon: FolderTree },
     { name: "Produits",    path: "/admin/products", icon: Smartphone },
+    { name: "Avis Clients", path: "/admin/reviews",  icon: Star },
     { name: "Commandes",   path: "/admin/orders",   icon: ShoppingBag },
   ]},
   { group: "Configuration", items: [

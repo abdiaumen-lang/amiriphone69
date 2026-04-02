@@ -19,10 +19,11 @@ export default function AdminLogin() {
         login(data.token);
         setLocation("/admin");
       },
-      onError: () => {
+      onError: (err: any) => {
+        console.error("Login Error:", err);
         toast({
           title: "Erreur de connexion",
-          description: "Identifiants incorrects",
+          description: err?.message || err?.toString() || "Identifiants incorrects",
           variant: "destructive"
         });
       }

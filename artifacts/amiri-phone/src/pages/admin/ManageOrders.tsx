@@ -67,7 +67,7 @@ function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
 
         <div className="p-6 space-y-6">
           {/* Customer Info */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="bg-secondary/50 rounded-xl p-4">
               <div className="text-xs font-semibold text-muted-foreground uppercase mb-2">Client</div>
               <div className="font-bold text-lg">{order.customerName}</div>
@@ -114,7 +114,7 @@ function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
                 {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
                   <button
                     key={key}
-                    onClick={() => setStatus(key)}
+                    onClick={() => setStatus(key as any)}
                     className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${status === key ? cfg.color + " ring-2 ring-offset-1" : "bg-secondary border-border text-muted-foreground hover:bg-secondary/80"}`}
                   >
                     {cfg.label}
@@ -123,7 +123,7 @@ function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-sm font-semibold mb-1 block">Transporteur</label>
                 <input value={deliveryCompany} onChange={e => setDeliveryCompany(e.target.value)} placeholder="Yalidine, ZR Express..."

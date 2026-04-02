@@ -37,4 +37,41 @@ router.post("/", async (req, res) => {
   }
 });
 
+router.put("/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+    const body = CreateCategoryBody.parse(req.body);
+    const [category] = await db.update(categoriesTable)
+      .set(body)
+      .where(eq(categoriesTable.id, id))
+      .returning();
+    if (!category) return res.status(404).json({ error: "Category not found" });
+    
+    // Assume product count doesn't change on edit
+    const [{ count }] = await db
+      .select({ count: count() })
+      .from(productsTable)
+      .where(eq(productsTable.categoryId, id));
+      
+    res.json({ ...category, productCount: Number(count) });
+  } catch (err: any) {
+    res.status(400).json({ error: "Bad request", message: err.message });
+  }
+});
+
+router.delete("/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+    const [category] = await db.delete(categoriesTable)
+      .where(eq(categoriesTable.id, id))
+      .returning();
+    if (!category) return res.status(404).json({ error: "Category not found" });
+    res.json({ success: true, message: "Category deleted" });
+  } catch (err: any) {
+    res.status(400).json({ error: "Bad request", message: err.message });
+  }
+});
+
 export default router;

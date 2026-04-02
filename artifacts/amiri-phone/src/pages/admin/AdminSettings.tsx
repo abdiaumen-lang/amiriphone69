@@ -6,9 +6,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import {
   Palette, Store, Plug, ToggleLeft, FileText, Languages, Save, Eye,
-  Image as ImageIcon, Type, Layout, AlertCircle, CheckCircle, RefreshCw
+  Image as ImageIcon, Type, Layout, AlertCircle, CheckCircle, RefreshCw, Video
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getSafeImageUrl } from "@/lib/utils";
+import { ImageUploader } from "@/components/ImageUploader";
+import { VideoUploader } from "@/components/VideoUploader";
 
 // ─── Tabs ────────────────────────────────────────────────────────────────────
 const TABS = [
@@ -93,7 +95,7 @@ function AppearanceTab({ settings, onChange }: { settings: any; onChange: (k: st
         <Field label="Aperçu">
           <div className="flex items-center gap-4 p-4 bg-secondary/50 rounded-xl border border-border">
             {settings.storeLogo ? (
-              <img src={settings.storeLogo} className="w-12 h-12 object-contain rounded-xl" />
+              <img src={getSafeImageUrl(settings.storeLogo)} className="w-12 h-12 object-contain rounded-xl" />
             ) : (
               <div className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg text-white" style={{ background: settings.primaryColor || "#007AFF" }}>
                 {(settings.storeName || "A")[0]}
@@ -152,6 +154,54 @@ function AppearanceTab({ settings, onChange }: { settings: any; onChange: (k: st
           </div>
         </Field>
       </Section>
+
+      <Section title="Vidéo d'arrière-plan (Hero)">
+        <div className="space-y-6">
+          <VideoUploader 
+            videoUrl={settings.heroVideoUrl || null} 
+            onChange={url => onChange("heroVideoUrl", url)} 
+            label="Vidéo de fond principale" 
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <Field label="Flou de la vidéo (Blur)" hint="0 = net, 10 = très flou. Idéal pour faire ressortir le texte.">
+              <input type="range" min={0} max={20} step={1} value={settings.heroVideoBlur ?? 0}
+                onChange={e => onChange("heroVideoBlur", parseInt(e.target.value))}
+                className="w-full accent-primary" />
+              <div className="text-sm font-medium text-muted-foreground mt-1">Niveau: {settings.heroVideoBlur ?? 0}px</div>
+            </Field>
+            <Field label="Opacité de la couche (Dim)" hint="Plus c'est haut, plus la vidéo est sombre. Idéal pour le contraste.">
+              <input type="range" min={0} max={1} step={0.1} value={settings.heroVideoOpacity ?? 0.4}
+                onChange={e => onChange("heroVideoOpacity", parseFloat(e.target.value))}
+                className="w-full accent-primary" />
+              <div className="text-sm font-medium text-muted-foreground mt-1">Opacité: {Math.round((settings.heroVideoOpacity ?? 0.4) * 100)}%</div>
+            </Field>
+          </div>
+        </div>
+      </Section>
+
+      <Section title="Vidéo d'arrière-plan (Produits à la Une)">
+        <div className="space-y-6">
+          <VideoUploader 
+            videoUrl={settings.featuredVideoUrl || null} 
+            onChange={url => onChange("featuredVideoUrl", url)} 
+            label="Vidéo pour la section produits" 
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <Field label="Flou (Blur)">
+              <input type="range" min={0} max={20} step={1} value={settings.featuredVideoBlur ?? 0}
+                onChange={e => onChange("featuredVideoBlur", parseInt(e.target.value))}
+                className="w-full accent-primary" />
+              <div className="text-xs mt-1 text-muted-foreground">{settings.featuredVideoBlur ?? 0}px</div>
+            </Field>
+            <Field label="Opacité (Dim)">
+              <input type="range" min={0} max={1} step={0.1} value={settings.featuredVideoOpacity ?? 0.3}
+                onChange={e => onChange("featuredVideoOpacity", parseFloat(e.target.value))}
+                className="w-full accent-primary" />
+              <div className="text-xs mt-1 text-muted-foreground">{Math.round((settings.featuredVideoOpacity ?? 0.3) * 100)}%</div>
+            </Field>
+          </div>
+        </div>
+      </Section>
     </div>
   );
 }
@@ -168,6 +218,9 @@ function StoreTab({ settings, onChange }: { settings: any; onChange: (k: string,
         </div>
         <Field label="Adresse (FR)"><TextInput value={settings.storeAddress || ""} onChange={v => onChange("storeAddress", v)} placeholder="Rue, Commune, Wilaya" /></Field>
         <Field label="العنوان (AR)"><TextInput value={settings.storeAddressAr || ""} onChange={v => onChange("storeAddressAr", v)} placeholder="الشارع، البلدية، الولاية" /></Field>
+        <Field label="Lien Google Maps (Embed URL)" hint="Allez sur Google Maps > Partager > Intégrer la carte > Copier uniquement le lien 'src' de l'iframe.">
+          <TextInput value={settings.googleMapsUrl || ""} onChange={v => onChange("googleMapsUrl", v)} placeholder="https://www.google.com/maps/embed?pb=..." />
+        </Field>
       </Section>
 
       <Section title="SEO & Référencement" desc="Ces informations apparaissent dans les résultats de recherche Google.">
@@ -241,6 +294,24 @@ function ContentTab({ settings, onChange }: { settings: any; onChange: (k: strin
         <Field label="Texte du bouton CTA"><TextInput value={content.popup?.cta || "Voir les offres"} onChange={v => update("popup","cta",v)} /></Field>
       </Section>
 
+      <Section title="Bande passante (Ticker)" desc="Afficher un défilement d'images (logos, partenaires) sur la page d'accueil.">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <Field label="Vitesse (secondes)" hint="Temps pour faire un tour complet (plus c'est bas, plus c'est rapide). Par défaut: 30">
+            <TextInput type="number" value={settings.tickerSpeed || "30"} onChange={v => onChange("tickerSpeed", Number(v))} />
+          </Field>
+          <Field label="Taille des images (px)" hint="Hauteur des logos dans l'animation. Par défaut: 64">
+            <TextInput type="number" value={settings.tickerImageSize || "64"} onChange={v => onChange("tickerImageSize", Number(v))} />
+          </Field>
+        </div>
+        <Field label="Images du Ticker">
+          <ImageUploader 
+            images={settings.tickerImages || []} 
+            onChange={imgs => onChange("tickerImages", imgs)}
+            maxImages={20}
+          />
+        </Field>
+      </Section>
+
       <Section title="Pied de page (Footer)">
         <Field label="Slogan"><TextInput value={content.footer?.slogan || "Votre partenaire tech en Algérie"} onChange={v => update("footer","slogan",v)} /></Field>
         <Field label="Copyright"><TextInput value={content.footer?.copyright || `© ${new Date().getFullYear()} Amiri Phone. Tous droits réservés.`} onChange={v => update("footer","copyright",v)} /></Field>
@@ -301,6 +372,9 @@ function IntegrationsTab({ settings, onChange }: { settings: any; onChange: (k: 
         </Field>
         <Field label="Chat ID" hint="L'ID de votre groupe ou canal Telegram.">
           <TextInput value={settings.telegramChatId || ""} onChange={v => onChange("telegramChatId", v)} placeholder="-100xxxxxxxxx" />
+        </Field>
+        <Field label="Nom d'utilisateur Telegram (Chat)" hint="Votre username Telegram sans @. Utilisé pour le bouton de chat sur le site.">
+          <TextInput value={settings.telegramUsername || ""} onChange={v => onChange("telegramUsername", v)} placeholder="amiri_phone" />
         </Field>
       </Section>
 
@@ -402,9 +476,12 @@ export default function AdminSettings() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  const initialized = useRef(false);
+
   useEffect(() => {
-    if (serverSettings && !isDirty) {
+    if (serverSettings && !initialized.current) {
       setLocalSettings(serverSettings as any);
+      initialized.current = true;
     }
   }, [serverSettings]);
 
@@ -468,25 +545,25 @@ export default function AdminSettings() {
   return (
     <AdminLayout>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-display font-bold">Paramètres</h1>
           <p className="text-muted-foreground mt-2">Personnalisez entièrement votre boutique sans toucher au code.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {isDirty && (
-            <div className="flex items-center gap-1.5 text-orange-600 text-sm font-medium bg-orange-50 border border-orange-200 px-3 py-1.5 rounded-xl">
+            <div className="flex items-center gap-1.5 text-orange-600 text-sm font-medium bg-orange-50 border border-orange-200 px-3 py-1.5 rounded-xl w-full sm:w-auto">
               <AlertCircle className="w-4 h-4" />
               Modifications non sauvegardées
             </div>
           )}
-          <Button variant="outline" size="sm" onClick={handleReset} className="gap-1.5"><RefreshCw className="w-4 h-4" />Réinitialiser</Button>
-          <Button variant="outline" size="sm" onClick={() => setShowPreview(!showPreview)} className="gap-1.5"><Eye className="w-4 h-4" />Aperçu</Button>
-          <Button onClick={handleSave} isLoading={isPending} size="sm" className="gap-1.5"><Save className="w-4 h-4" />Sauvegarder</Button>
+          <Button variant="outline" size="sm" onClick={handleReset} className="gap-1.5 flex-1 sm:flex-none"><RefreshCw className="w-4 h-4" /><span className="hidden sm:inline">Réinitialiser</span></Button>
+          <Button variant="outline" size="sm" onClick={() => setShowPreview(!showPreview)} className="gap-1.5 flex-1 sm:flex-none"><Eye className="w-4 h-4" /><span className="hidden sm:inline">Aperçu</span></Button>
+          <Button onClick={handleSave} isLoading={isPending} size="sm" className="gap-1.5 w-full sm:w-auto"><Save className="w-4 h-4" />Sauvegarder</Button>
         </div>
       </div>
 
-      <div className={cn("grid gap-8", showPreview ? "grid-cols-2" : "grid-cols-1")}>
+      <div className={cn("grid gap-8", showPreview ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1")}>
         {/* Settings Panel */}
         <div>
           {/* Tabs */}

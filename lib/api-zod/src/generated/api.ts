@@ -60,6 +60,9 @@ export const ListProductsResponse = zod.object({
       brand: zod.string().nullish(),
       model: zod.string().nullish(),
       specs: zod.record(zod.string(), zod.unknown()).nullish(),
+      descriptionMedia: zod.array(zod.object({ type: zod.enum(["image", "video"]), url: zod.string() })).nullish(),
+      model: zod.string().nullish(),
+      specs: zod.record(zod.string(), zod.unknown()).nullish(),
       averageRating: zod.number().nullish(),
       reviewCount: zod.number(),
       createdAt: zod.date(),
@@ -92,6 +95,7 @@ export const CreateProductBody = zod.object({
   brand: zod.string().nullish(),
   model: zod.string().nullish(),
   specs: zod.record(zod.string(), zod.unknown()).nullish(),
+  descriptionMedia: zod.array(zod.object({ type: zod.enum(["image", "video"]), url: zod.string() })).nullish(),
 });
 
 /**
@@ -131,6 +135,7 @@ export const GetProductResponse = zod.object({
   brand: zod.string().nullish(),
   model: zod.string().nullish(),
   specs: zod.record(zod.string(), zod.unknown()).nullish(),
+  descriptionMedia: zod.array(zod.object({ type: zod.enum(["image", "video"]), url: zod.string() })).nullish(),
   averageRating: zod.number().nullish(),
   reviewCount: zod.number(),
   createdAt: zod.date(),
@@ -162,6 +167,7 @@ export const UpdateProductBody = zod.object({
   brand: zod.string().nullish(),
   model: zod.string().nullish(),
   specs: zod.record(zod.string(), zod.unknown()).nullish(),
+  descriptionMedia: zod.array(zod.object({ type: zod.enum(["image", "video"]), url: zod.string() })).nullish(),
 });
 
 export const UpdateProductResponse = zod.object({
@@ -194,6 +200,7 @@ export const UpdateProductResponse = zod.object({
   brand: zod.string().nullish(),
   model: zod.string().nullish(),
   specs: zod.record(zod.string(), zod.unknown()).nullish(),
+  descriptionMedia: zod.array(zod.object({ type: zod.enum(["image", "video"]), url: zod.string() })).nullish(),
   averageRating: zod.number().nullish(),
   reviewCount: zod.number(),
   createdAt: zod.date(),
@@ -235,6 +242,60 @@ export const CreateCategoryBody = zod.object({
   nameFr: zod.string().optional(),
   slug: zod.string(),
   icon: zod.string().optional(),
+});
+
+/**
+ * @summary Get a single category
+ */
+export const GetCategoryParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetCategoryResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  nameAr: zod.string().nullish(),
+  nameFr: zod.string().nullish(),
+  slug: zod.string(),
+  icon: zod.string().nullish(),
+  productCount: zod.number(),
+});
+
+/**
+ * @summary Update a category (admin)
+ */
+export const UpdateCategoryParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateCategoryBody = zod.object({
+  name: zod.string(),
+  nameAr: zod.string().optional(),
+  nameFr: zod.string().optional(),
+  slug: zod.string(),
+  icon: zod.string().optional(),
+});
+
+export const UpdateCategoryResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  nameAr: zod.string().nullish(),
+  nameFr: zod.string().nullish(),
+  slug: zod.string(),
+  icon: zod.string().nullish(),
+  productCount: zod.number(),
+});
+
+/**
+ * @summary Delete a category (admin)
+ */
+export const DeleteCategoryParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DeleteCategoryResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string().optional(),
 });
 
 /**
@@ -468,6 +529,7 @@ export const ListReviewsResponseItem = zod.object({
   customerName: zod.string(),
   rating: zod.number(),
   comment: zod.string().nullish(),
+  media: zod.array(zod.object({ type: zod.string(), url: zod.string() })).default([]),
   verified: zod.boolean(),
   createdAt: zod.date(),
 });
@@ -481,6 +543,7 @@ export const CreateReviewBody = zod.object({
   customerName: zod.string(),
   rating: zod.number(),
   comment: zod.string().optional(),
+  media: zod.array(zod.object({ type: zod.string(), url: zod.string() })).optional(),
 });
 
 /**

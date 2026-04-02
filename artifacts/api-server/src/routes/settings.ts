@@ -25,9 +25,14 @@ const DEFAULT_SETTINGS = {
   maintenanceMode: false,
   seoTitle: "Amiri Phone - Meilleurs Smartphones en Algérie",
   seoDescription: "Achetez les meilleurs smartphones iPhone, Samsung, Xiaomi au meilleur prix en Algérie. Livraison rapide, paiement à la livraison.",
+  heroVideoBlur: 0,
+  heroVideoOpacity: 0.4,
+  featuredVideoUrl: null,
+  featuredVideoBlur: 0,
+  featuredVideoOpacity: 0.3,
 };
 
-async function getSettingsFromDb() {
+export async function getSettingsFromDb() {
   const rows = await db.select().from(settingsTable);
   const settingsMap = new Map(rows.map(r => [r.key, r.value]));
 

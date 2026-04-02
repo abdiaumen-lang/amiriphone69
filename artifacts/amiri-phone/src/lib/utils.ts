@@ -14,7 +14,9 @@ export function formatDZD(amount: number) {
   }).format(amount).replace('DZD', 'DA');
 }
 
-export function truncate(str: string, length: number) {
-  if (!str) return '';
-  return str.length > length ? str.substring(0, length) + '...' : str;
+export function getSafeImageUrl(url: string | null | undefined) {
+  if (!url) return "";
+  if (typeof url !== 'string') return "";
+  // Convert absolute localhost URLs to relative to work with Vite proxy
+  return url.replace(/^https?:\/\/(localhost|127\.0\.0\.1):8080\//, "/");
 }

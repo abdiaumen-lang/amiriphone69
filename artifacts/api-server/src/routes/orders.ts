@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { ordersTable, orderItemsTable, productsTable } from "@workspace/db";
-import { eq, and, desc, count, sql } from "drizzle-orm";
+import { eq, and, desc, count, sql, inArray, SQL } from "drizzle-orm";
 import { CreateOrderBody, ListOrdersQueryParams, UpdateOrderStatusBody } from "@workspace/api-zod";
 import { WILAYAS } from "../data/wilayas.js";
+import { getSettingsFromDb } from "./settings.js";
 
 const router = Router();
 
@@ -18,16 +19,23 @@ function generateOrderNumber(): string {
 
 async function sendTelegramNotification(order: any) {
   try {
-    const token = process.env.TELEGRAM_BOT_TOKEN;
-    const chatId = process.env.TELEGRAM_CHAT_ID;
+    const settings = await getSettingsFromDb();
+    
+    // Also check if telegramNotifs feature is explicitly disabled
+    if (settings.features?.telegramNotifs === false) return;
+    
+    const token = settings.telegramBotToken || process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = settings.telegramChatId || process.env.TELEGRAM_CHAT_ID;
     if (!token || !chatId) return;
 
+    const sanitize = (text: string) => text.replace(/[*_`]/g, "");
+
     const itemsList = order.items.map((item: any) =>
-      `• ${item.productName} x${item.quantity} = ${item.total} DA`
+      `• ${sanitize(item.productName)} x${item.quantity} = ${item.total} DA`
     ).join("\n");
 
     const message = `🛒 *طلب جديد #${order.orderNumber}*\n\n` +
-      `👤 *العميل:* ${order.customerName}\n` +
+      `👤 *العميل:* ${sanitize(order.customerName)}\n` +
       `📞 *الهاتف:* ${order.customerPhone}\n` +
       `📍 *الولاية:* ${order.wilayaName}\n` +
       `🏘 *البلدية:* ${order.communeName || "غير محدد"}\n\n` +
@@ -35,9 +43,9 @@ async function sendTelegramNotification(order: any) {
       `💰 *المجموع:* ${order.subtotal} DA\n` +
       `🚚 *التوصيل:* ${order.shippingCost} DA\n` +
       `💵 *الإجمالي:* ${order.total} DA\n\n` +
-      `📝 *ملاحظات:* ${order.notes || "لا توجد"}`;
+      `📝 *ملاحظات:* ${order.notes ? sanitize(order.notes) : "لا توجد"}`;
 
-    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -46,6 +54,11 @@ async function sendTelegramNotification(order: any) {
         parse_mode: "Markdown",
       }),
     });
+    
+    if (!res.ok) {
+        const errText = await res.text();
+        console.error("Telegram API Error:", res.status, errText);
+    }
   } catch (err) {
     console.error("Telegram notification error:", err);
   }
@@ -53,9 +66,14 @@ async function sendTelegramNotification(order: any) {
 
 async function sendWhatsAppNotification(order: any) {
   try {
-    const token = process.env.WHATSAPP_TOKEN;
-    const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-    const whatsappNumber = process.env.WHATSAPP_NUMBER;
+    const settings = await getSettingsFromDb();
+
+    // Also check if whatsappNotifs feature is explicitly disabled
+    if (settings.features?.whatsappNotifs === false) return;
+
+    const token = settings.whatsappToken || process.env.WHATSAPP_TOKEN;
+    const phoneNumberId = settings.whatsappPhoneId || process.env.WHATSAPP_PHONE_NUMBER_ID;
+    const whatsappNumber = settings.whatsappNumber || process.env.WHATSAPP_NUMBER;
     if (!token || !phoneNumberId || !whatsappNumber) return;
 
     const message = `🛒 طلب جديد #${order.orderNumber}\n` +
@@ -82,22 +100,63 @@ async function sendWhatsAppNotification(order: any) {
   }
 }
 
+async function sendGoogleSheetsNotification(order: any) {
+  try {
+    const settings = await getSettingsFromDb();
+
+    // Check if googleSheetsId is a valid App Script URL
+    const webhookUrl = settings.googleSheetsId;
+    if (!webhookUrl || !webhookUrl.startsWith("https://script.google.com")) return;
+
+    // Create a summary of items
+    const itemsSummary = order.items.map((item: any) =>
+      `${item.productName} (x${item.quantity})`
+    ).join(", ");
+
+    const payload = {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      customerName: order.customerName,
+      customerPhone: order.customerPhone,
+      wilayaName: order.wilayaName,
+      itemsSummary,
+      total: order.total,
+      subtotal: order.subtotal,
+      shippingCost: order.shippingCost,
+      notes: order.notes,
+      createdAt: order.createdAt,
+    };
+
+    const res = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+        console.error("Google Sheets Sync Error:", res.status, await res.text());
+    }
+  } catch (err) {
+    console.error("Google Sheets sync error:", err);
+  }
+}
+
 router.get("/", async (req, res) => {
   try {
     const query = ListOrdersQueryParams.parse(req.query);
     const { status, wilaya, limit = 20, offset = 0 } = query;
 
     const conditions: any[] = [];
-    if (status) conditions.push(eq(ordersTable.status, status));
-    if (wilaya) conditions.push(eq(ordersTable.wilayaCode, wilaya));
+    if (status) conditions.push(eq(ordersTable.status, status as any));
+    if (wilaya) conditions.push(eq(ordersTable.wilayaCode, wilaya as any));
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
     const orders = await db
       .select()
-      .from(ordersTable)
+      .from(ordersTable as any)
       .where(whereClause)
-      .orderBy(desc(ordersTable.createdAt))
+      .orderBy(desc(ordersTable.createdAt) as any)
       .limit(limit)
       .offset(offset);
 
@@ -107,13 +166,13 @@ router.get("/", async (req, res) => {
     const orderIds = orders.map(o => o.id);
     const allItems = orderIds.length > 0
       ? await db.select().from(orderItemsTable)
-          .where(sql`${orderItemsTable.orderId} = ANY(ARRAY[${sql.join(orderIds.map(id => sql`${id}`), sql`, `)}]::int[])`)
+          .where(inArray(orderItemsTable.orderId, orderIds))
       : [];
 
-    const itemsMap = new Map<number, typeof allItems>();
+    const itemsMap = new Map<number, (typeof allItems)[number][]>();
     for (const item of allItems) {
       if (!itemsMap.has(item.orderId)) itemsMap.set(item.orderId, []);
-      itemsMap.get(item.orderId)!.push(item);
+      itemsMap.get(item.orderId)!.push(item as any);
     }
 
     const formattedOrders = orders.map(o => ({
@@ -151,7 +210,8 @@ router.post("/", async (req, res) => {
     for (const item of body.items) {
       const product = productMap.get(item.productId);
       if (!product) {
-        return res.status(400).json({ error: "Bad request", message: `Product ${item.productId} not found` });
+        res.status(400).json({ error: "Bad request", message: `Product ${item.productId} not found` });
+        return;
       }
       const price = Number(product.price);
       const itemTotal = price * item.quantity;
@@ -207,6 +267,7 @@ router.post("/", async (req, res) => {
     await Promise.all([
       sendTelegramNotification(fullOrder),
       sendWhatsAppNotification(fullOrder),
+      sendGoogleSheetsNotification(fullOrder),
     ]);
 
     res.status(201).json(fullOrder);
@@ -220,7 +281,8 @@ router.get("/:id", async (req, res) => {
     const id = parseInt(req.params.id);
     const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, id));
     if (!order) {
-      return res.status(404).json({ error: "Not found", message: "Order not found" });
+      res.status(404).json({ error: "Not found", message: "Order not found" });
+      return;
     }
 
     const items = await db.select().from(orderItemsTable).where(eq(orderItemsTable.orderId, id));
@@ -255,7 +317,8 @@ router.patch("/:id", async (req, res) => {
       .returning();
 
     if (!order) {
-      return res.status(404).json({ error: "Not found", message: "Order not found" });
+      res.status(404).json({ error: "Not found", message: "Order not found" });
+      return;
     }
 
     const items = await db.select().from(orderItemsTable).where(eq(orderItemsTable.orderId, id));

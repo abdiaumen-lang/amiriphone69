@@ -17,8 +17,10 @@ import NotFound from "@/pages/not-found";
 import AdminLogin from "@/pages/admin/Login";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import ManageProducts from "@/pages/admin/ManageProducts";
+import ManageCategories from "@/pages/admin/ManageCategories";
 import ManageOrders from "@/pages/admin/ManageOrders";
 import AdminSettings from "@/pages/admin/AdminSettings";
+import ManageReviews from "@/pages/admin/ManageReviews";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,7 +47,9 @@ function Router() {
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/products" component={ManageProducts} />
+      <Route path="/admin/categories" component={ManageCategories} />
       <Route path="/admin/orders" component={ManageOrders} />
+      <Route path="/admin/reviews" component={ManageReviews} />
       <Route path="/admin/settings" component={AdminSettings} />
 
       {/* 404 */}
@@ -60,7 +64,7 @@ function App() {
       <AuthProvider>
         <CartProvider>
           <TooltipProvider>
-            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <WouterRouter base={import.meta.env.BASE_URL === "/" ? undefined : import.meta.env.BASE_URL.replace(/\/$/, "")}>
               <Router />
             </WouterRouter>
             <Toaster />

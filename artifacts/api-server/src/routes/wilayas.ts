@@ -14,9 +14,11 @@ router.get("/:wilayaCode/communes", (req, res) => {
   if (!communes) {
     const wilaya = WILAYAS.find(w => w.code === wilayaCode);
     if (!wilaya) {
-      return res.status(404).json({ error: "Not found", message: "Wilaya not found" });
+      res.status(404).json({ error: "Not found", message: "Wilaya not found" });
+      return;
     }
-    return res.json([]);
+    res.json([]);
+    return;
   }
 
   res.json(communes);

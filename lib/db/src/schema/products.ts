@@ -35,6 +35,7 @@ export const productsTable = pgTable("products", {
   brand: text("brand"),
   model: text("model"),
   specs: jsonb("specs"),
+  descriptionMedia: jsonb("description_media"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

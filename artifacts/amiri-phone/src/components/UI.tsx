@@ -126,11 +126,50 @@ export function Badge({ children, variant = 'default', className }: { children: 
 // Card
 export function Card({ children, className }: { children: React.ReactNode, className?: string }) {
   return (
-    <div className={cn("bg-card rounded-2xl border border-border shadow-sm", className)}>
+    <div className={cn("bg-card rounded-2xl border border-border shadow-sm overflow-hidden", className)}>
       {children}
     </div>
   );
 }
+
+export function CardHeader({ children, className }: { children: React.ReactNode, className?: string }) {
+  return <div className={cn("p-6 pb-3 border-b border-border/50", className)}>{children}</div>;
+}
+
+export function CardTitle({ children, className }: { children: React.ReactNode, className?: string }) {
+  return <h3 className={cn("text-lg font-bold text-foreground", className)}>{children}</h3>;
+}
+
+export function CardContent({ children, className }: { children: React.ReactNode, className?: string }) {
+  return <div className={cn("p-6", className)}>{children}</div>;
+}
+
+// Textarea
+export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  label?: string;
+  error?: string;
+}
+
+export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
+  ({ className, label, error, ...props }, ref) => {
+    return (
+      <div className="w-full space-y-2">
+        {label && <label className="text-sm font-semibold text-foreground">{label}</label>}
+        <textarea
+          ref={ref}
+          className={cn(
+            "flex min-h-[100px] w-full rounded-xl border border-input bg-background px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 transition-all resize-none",
+            error && "border-destructive focus-visible:ring-destructive",
+            className
+          )}
+          {...props}
+        />
+        {error && <p className="text-xs text-destructive mt-1">{error}</p>}
+      </div>
+    );
+  }
+);
+Textarea.displayName = 'Textarea';
 
 // Skeletons
 export function ProductSkeleton() {

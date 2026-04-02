@@ -115,7 +115,8 @@ router.get("/:id", async (req, res) => {
       .limit(1);
 
     if (!result.length) {
-      return res.status(404).json({ error: "Not found", message: "Product not found" });
+      res.status(404).json({ error: "Not found", message: "Product not found" });
+      return;
     }
 
     const { products: p, categories: c } = result[0];
@@ -203,7 +204,8 @@ router.put("/:id", async (req, res) => {
       .returning();
 
     if (!product) {
-      return res.status(404).json({ error: "Not found", message: "Product not found" });
+      res.status(404).json({ error: "Not found", message: "Product not found" });
+      return;
     }
 
     res.json({

@@ -2,10 +2,10 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { AppLayout } from "@/components/Layout";
 import { PageTransition, Input, Select, Button, Card } from "@/components/UI";
-import { formatDZD } from "@/lib/utils";
+import { formatDZD, getSafeImageUrl } from "@/lib/utils";
 import { useCart } from "@/store/Store";
 import { useToast } from "@/hooks/use-toast";
-import { useListWilayas, useListCommunes, useCreateOrder } from "@workspace/api-client-react";
+import { useListWilayas, useListCommunes, getListCommunesQueryKey, useCreateOrder } from "@workspace/api-client-react";
 
 export default function Checkout() {
   const { items, subtotal, clearCart } = useCart();
@@ -25,7 +25,7 @@ export default function Checkout() {
   });
 
   const { data: communes } = useListCommunes(formData.wilayaCode, { 
-    query: { enabled: !!formData.wilayaCode } 
+    query: { enabled: !!formData.wilayaCode, queryKey: getListCommunesQueryKey(formData.wilayaCode) } 
   });
 
   const selectedWilayaObj = wilayas?.find(w => w.code === formData.wilayaCode);
@@ -169,8 +169,8 @@ export default function Checkout() {
                 <div className="space-y-4 mb-6 max-h-[40vh] overflow-y-auto pr-2">
                   {items.map(item => (
                     <div key={item.product.id} className="flex gap-4 items-center">
-                      <div className="w-16 h-16 bg-secondary rounded-xl p-2 shrink-0">
-                        <img src={item.product.images?.[0] || ""} alt="" className="w-full h-full object-contain mix-blend-multiply" />
+                      <div className="w-20 h-20 shrink-0 flex items-center justify-center">
+                        <img src={getSafeImageUrl(item.product.images?.[0]) || ""} alt={item.product.name} className="w-full h-full object-contain drop-shadow-sm" />
                       </div>
                       <div className="flex-1">
                         <div className="font-semibold text-sm line-clamp-1">{item.product.name}</div>

@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { formatDZD } from "@/lib/utils";
+import { formatDZD, getSafeImageUrl } from "@/lib/utils";
 import type { Product } from "@workspace/api-client-react";
 import { Badge, Button } from "./UI";
 import { ShoppingCart } from "lucide-react";
@@ -20,61 +20,58 @@ export function ProductCard({ product }: { product: Product }) {
   };
 
   return (
-    <Link href={`/products/${product.id}`} className="group flex flex-col bg-card rounded-2xl border border-border overflow-hidden hover:shadow-xl hover:border-primary/20 hover:-translate-y-1 transition-all duration-300">
+    <Link href={`/products/${product.id}`} className="group flex flex-col bg-card rounded-2xl sm:rounded-3xl overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border border-border/50">
       
-      <div className="relative aspect-[4/5] bg-secondary/50 p-6 overflow-hidden flex items-center justify-center">
+      <div className="relative aspect-[4/5] bg-secondary/20 overflow-hidden w-full">
         {/* Badges */}
-        <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
+        <div className="absolute top-2 left-2 sm:top-4 sm:left-4 flex flex-col gap-1.5 z-10">
           {product.onSale && product.discount && (
-            <Badge variant="danger" className="shadow-sm">-{product.discount}%</Badge>
+            <Badge variant="danger" className="shadow-md px-2 py-0.5 sm:px-3 sm:py-1 font-bold text-[10px] sm:text-sm">-{product.discount}%</Badge>
           )}
           {product.featured && (
-            <Badge variant="default" className="shadow-sm bg-primary text-white">Populaire</Badge>
+            <Badge variant="default" className="shadow-md bg-primary text-white px-2 py-0.5 sm:px-3 sm:py-1 font-bold text-[10px] sm:text-sm">Nouveau</Badge>
           )}
         </div>
 
         {/* Image */}
-        {/* Using unsplash placeholder if image array is empty for stunning UI */}
-        {/* smartphone product shot */}
         <img 
-          src={product.images?.[0] || "https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=800&q=80"} 
+          src={getSafeImageUrl(product.images?.[0]) || "https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=800&q=80"} 
           alt={product.name}
-          className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-500"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
         />
-
-        {/* Quick Add Button (visible on hover) */}
-        <div className="absolute bottom-4 inset-x-4 translate-y-10 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-          <Button size="sm" className="w-full rounded-full gap-2 shadow-lg" onClick={handleAdd}>
-            <ShoppingCart className="w-4 h-4" /> Ajouter
-          </Button>
-        </div>
       </div>
 
-      <div className="p-5 flex flex-col flex-1">
-        <div className="text-xs text-muted-foreground font-medium mb-1">
-          {product.brand || "Smartphone"}
-        </div>
-        <h3 className="font-semibold text-foreground leading-tight mb-2 line-clamp-2">
+      <div className="p-3 sm:p-6 flex flex-col flex-1 bg-white">
+        {product.brand && (
+          <div className="text-[10px] sm:text-xs text-muted-foreground font-bold mb-1.5 sm:mb-2 uppercase tracking-wide">
+            {product.brand}
+          </div>
+        )}
+        
+        <h3 className="font-display font-semibold text-foreground text-sm sm:text-xl leading-snug mb-3 sm:mb-4 line-clamp-2">
           {product.name}
         </h3>
         
-        <div className="mt-auto pt-4 flex items-end justify-between">
-          <div>
-            <div className="font-display font-bold text-lg text-primary">
+        <div className="mt-auto flex flex-col gap-3 sm:gap-5">
+          <div className="flex flex-col">
+            <div className="font-display font-bold text-lg sm:text-2xl tracking-tight text-foreground">
               {formatDZD(product.price)}
             </div>
             {product.originalPrice && product.originalPrice > product.price && (
-              <div className="text-sm text-muted-foreground line-through">
+              <div className="text-xs sm:text-sm text-muted-foreground line-through mt-0.5">
                 {formatDZD(product.originalPrice)}
               </div>
             )}
           </div>
           
-          {product.stock > 0 && product.stock < 5 && (
-            <div className="text-[10px] font-bold text-destructive bg-destructive/10 px-2 py-1 rounded-full animate-pulse">
-              Plus que {product.stock}!
-            </div>
-          )}
+          <Button 
+            variant="outline" 
+            className="w-full rounded-xl sm:rounded-2xl border-2 border-foreground/10 font-bold h-10 sm:h-12 text-xs sm:text-base group-hover:bg-foreground group-hover:text-background group-hover:border-foreground transition-all shadow-sm"
+            onClick={handleAdd}
+          >
+            <span className="hidden sm:inline">Ajouter au panier</span>
+            <span className="sm:hidden">Ajouter</span>
+          </Button>
         </div>
       </div>
     </Link>

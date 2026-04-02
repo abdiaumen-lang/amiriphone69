@@ -66,7 +66,7 @@ export default function Products() {
                         <input type="radio" name="cat" checked={category === ""} onChange={() => setCategory("")} className="text-primary focus:ring-primary" />
                         <span className="text-sm">Toutes</span>
                       </label>
-                      {categoriesData?.map(cat => (
+                      {Array.isArray(categoriesData) && categoriesData.map(cat => (
                         <label key={cat.id} className="flex items-center gap-2 cursor-pointer">
                           <input 
                             type="radio" 
@@ -79,7 +79,7 @@ export default function Products() {
                         </label>
                       ))}
                       {/* Fallback hardcoded if api is empty initially */}
-                      {!categoriesData?.length && ["Smartphones", "Accessoires", "Audio"].map(c => (
+                      {(!Array.isArray(categoriesData) || !categoriesData.length) && ["Smartphones", "Accessoires", "Audio"].map(c => (
                         <label key={c} className="flex items-center gap-2 cursor-pointer">
                           <input type="radio" name="cat" checked={category === c.toLowerCase()} onChange={() => setCategory(c.toLowerCase())} className="text-primary focus:ring-primary" />
                           <span className="text-sm">{c}</span>

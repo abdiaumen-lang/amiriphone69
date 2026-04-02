@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { AppLayout } from "@/components/Layout";
 import { PageTransition, Button } from "@/components/UI";
-import { formatDZD } from "@/lib/utils";
+import { formatDZD, getSafeImageUrl } from "@/lib/utils";
 import { useCart } from "@/store/Store";
 import { Trash2, Minus, Plus, ShoppingBag, ArrowRight } from "lucide-react";
 
@@ -40,11 +40,11 @@ export default function Cart() {
                 <div className="p-6 sm:p-8 space-y-8">
                   {items.map((item) => (
                     <div key={item.product.id} className="flex flex-col sm:flex-row gap-6 items-center pb-8 border-b border-border last:border-0 last:pb-0">
-                      <div className="w-32 h-32 bg-secondary/50 rounded-2xl p-4 shrink-0 flex items-center justify-center">
+                      <div className="w-28 h-28 sm:w-32 sm:h-32 shrink-0 flex items-center justify-center">
                         <img 
-                          src={item.product.images?.[0] || "https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=200&q=80"} 
+                          src={getSafeImageUrl(item.product.images?.[0]) || "https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=200&q=80"} 
                           alt={item.product.name} 
-                          className="max-w-full max-h-full object-contain mix-blend-multiply"
+                          className="w-full h-full object-contain drop-shadow-md hover:scale-105 transition-transform"
                         />
                       </div>
                       

@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn, getSafeImageUrl } from "@/lib/utils";
 import { Upload, X, Plus, Image as ImageIcon, Loader2, GripVertical } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
@@ -144,7 +144,7 @@ export function ImageUploader({ images, onChange, maxImages = 8 }: ImageUploader
           {images.map((url, i) => (
             <div key={i} className="relative group aspect-square rounded-xl overflow-hidden border border-border bg-secondary">
               <img
-                src={url}
+                src={getSafeImageUrl(url)}
                 alt=""
                 className="w-full h-full object-contain p-1"
                 onError={e => { (e.target as HTMLImageElement).src = ""; }}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, Button, Badge } from "@/components/UI";
-import { formatDZD, cn } from "@/lib/utils";
+import { formatDZD, cn, getSafeImageUrl } from "@/lib/utils";
 import {
   useListProducts, useListCategories, useCreateProduct, useUpdateProduct, useDeleteProduct,
 } from "@workspace/api-client-react";
@@ -23,6 +23,7 @@ const EMPTY_FORM = {
   discount: null as number | null,
   brand: "", model: "",
   specs: {} as Record<string, string>,
+  descriptionMedia: [] as { type: "image" | "video"; url: string }[],
 };
 type FormType = typeof EMPTY_FORM;
 
@@ -68,6 +69,7 @@ function ProductForm({ initial, onClose }: { initial: Product | null; onClose: (
       brand: initial.brand || "",
       model: initial.model || "",
       specs: (initial.specs as Record<string, string>) || {},
+      descriptionMedia: (initial.descriptionMedia as any[]) || [],
     };
   });
 
@@ -75,6 +77,7 @@ function ProductForm({ initial, onClose }: { initial: Product | null; onClose: (
     Object.entries(form.specs || {}).map(([k, v]) => `${k}: ${v}`).join("\n")
   );
   const [tab, setTab] = useState<"basic" | "media" | "advanced">("basic");
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
 
   const { mutate: createProduct, isPending: creating } = useCreateProduct({
     mutation: {
@@ -119,10 +122,10 @@ function ProductForm({ initial, onClose }: { initial: Product | null; onClose: (
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 p-4 pb-0">
+        <div className="flex flex-wrap gap-1 p-4 pb-0">
           {[{ id: "basic", label: "Informations" }, { id: "media", label: "Images & Specs" }, { id: "advanced", label: "Avancé" }].map(t => (
             <button key={t.id} onClick={() => setTab(t.id as any)}
-              className={cn("px-4 py-2 rounded-xl text-sm font-medium transition-all", tab === t.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary")}>
+              className={cn("px-4 py-2 rounded-xl text-sm font-medium transition-all flex-1 sm:flex-none whitespace-nowrap", tab === t.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary")}>
               {t.label}
             </button>
           ))}
@@ -169,7 +172,7 @@ function ProductForm({ initial, onClose }: { initial: Product | null; onClose: (
               <div className="flex flex-wrap gap-3">
                 {[{ key: "featured", label: "⭐ Mis en avant" }, { key: "onSale", label: "🏷️ En promotion" }].map(({ key, label }) => (
                   <button key={key} onClick={() => set(key as any, !form[key as keyof FormType])}
-                    className={cn("px-4 py-2 rounded-xl border text-sm font-medium transition-all", (form[key as keyof FormType] as boolean) ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:bg-secondary")}>
+                    className={cn("px-4 py-2 rounded-xl border text-sm font-medium transition-all w-full sm:w-auto", (form[key as keyof FormType] as boolean) ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:bg-secondary")}>
                     {label}
                   </button>
                 ))}
@@ -179,12 +182,118 @@ function ProductForm({ initial, onClose }: { initial: Product | null; onClose: (
 
           {tab === "media" && (
             <>
-              <Field label="Images du produit" hint="Cliquez sur + ou glissez des images. La première image sera l'image principale.">
+              <Field label="Images du produit (Galerie principale)" hint="La première image sera l'image principale.">
                 <ImageUploader
                   images={form.images.filter(Boolean)}
                   onChange={imgs => set("images", imgs.length ? imgs : [""])}
                   maxImages={8}
                 />
+              </Field>
+
+              <Field label="Contenu du descriptif (Images & Vidéos)" hint="Images et vidéos qui apparaîtront SOUS la description.">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <button 
+                      type="button"
+                      disabled={isUploadingMedia}
+                      onClick={() => {
+                        const input = document.createElement("input");
+                        input.type = "file";
+                        input.accept = "image/*";
+                        input.onchange = async (e) => {
+                          const file = (e.target as HTMLInputElement).files?.[0];
+                          if (!file) return;
+                          setIsUploadingMedia(true);
+                          const formData = new FormData();
+                          formData.append("image", file);
+                          try {
+                            const res = await fetch("/api/upload", { method: "POST", body: formData });
+                            const data = await res.json();
+                            if (data.url) set("descriptionMedia", [...form.descriptionMedia, { type: "image", url: data.url }]);
+                          } catch (err) { alert("Upload failed"); }
+                          finally { setIsUploadingMedia(false); }
+                        };
+                        input.click();
+                      }}
+                      className={cn("p-3 border-2 border-dashed border-border rounded-xl flex items-center justify-center gap-2 hover:bg-secondary transition-colors", isUploadingMedia && "opacity-50 cursor-not-allowed")}
+                    >
+                      <ImageIcon className="w-4 h-4" /> {isUploadingMedia ? "Chargement..." : "+ Image الوصف"}
+                    </button>
+                    <button 
+                      type="button"
+                      disabled={isUploadingMedia}
+                      onClick={() => {
+                        const input = document.createElement("input");
+                        input.type = "file";
+                        input.accept = "video/*";
+                        input.onchange = async (e) => {
+                          const file = (e.target as HTMLInputElement).files?.[0];
+                          if (!file) return;
+                          setIsUploadingMedia(true);
+                          const formData = new FormData();
+                          formData.append("image", file);
+                          try {
+                            const res = await fetch("/api/upload", { method: "POST", body: formData });
+                            const data = await res.json();
+                            if (data.url) set("descriptionMedia", [...form.descriptionMedia, { type: "video", url: data.url }]);
+                          } catch (err) { alert("Upload failed"); }
+                          finally { setIsUploadingMedia(false); }
+                        };
+                        input.click();
+                      }}
+                      className={cn("p-3 border-2 border-dashed border-border rounded-xl flex items-center justify-center gap-2 hover:bg-secondary transition-colors", isUploadingMedia && "opacity-50 cursor-not-allowed")}
+                    >
+                      <Plus className="w-4 h-4" /> {isUploadingMedia ? "Chargement..." : "+ Vidéo الوصف"}
+                    </button>
+                  </div>
+
+                  {form.descriptionMedia.length > 0 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {form.descriptionMedia.map((m, i) => (
+                        <div key={i} className="relative group aspect-video rounded-xl overflow-hidden border border-border bg-secondary flex items-center justify-center">
+                          {m.type === "image" ? (
+                            <img src={getSafeImageUrl(m.url)} className="w-full h-full object-contain" />
+                          ) : (
+                            <video src={getSafeImageUrl(m.url)} className="w-full h-full object-cover" />
+                          )}
+                          
+                          {/* Controls Layer */}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                            {i > 0 && (
+                              <button type="button" onClick={() => {
+                                const next = [...form.descriptionMedia];
+                                [next[i], next[i-1]] = [next[i-1], next[i]];
+                                set("descriptionMedia", next);
+                              }} className="p-1.5 bg-white/20 hover:bg-white/40 text-white rounded-lg transition-colors">
+                                ←
+                              </button>
+                            )}
+                            <button 
+                              type="button"
+                              onClick={() => set("descriptionMedia", form.descriptionMedia.filter((_, idx) => idx !== i))}
+                              className="p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                            {i < form.descriptionMedia.length - 1 && (
+                              <button type="button" onClick={() => {
+                                const next = [...form.descriptionMedia];
+                                [next[i], next[i+1]] = [next[i+1], next[i]];
+                                set("descriptionMedia", next);
+                              }} className="p-1.5 bg-white/20 hover:bg-white/40 text-white rounded-lg transition-colors">
+                                →
+                              </button>
+                            )}
+                          </div>
+                          
+                          <div className="absolute bottom-1 left-2 text-[10px] bg-black/60 text-white px-2 py-0.5 rounded-full backdrop-blur-sm">
+                            {m.type === "image" ? "IMG" : "VID"}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </Field>
 
               <Field label="Spécifications techniques" hint="Format: Clé: Valeur (une par ligne). Ex: Écran: 6.7 pouces">
@@ -199,19 +308,19 @@ function ProductForm({ initial, onClose }: { initial: Product | null; onClose: (
             <>
               <div className="p-4 bg-secondary/50 rounded-xl border border-border">
                 <div className="text-sm font-semibold mb-3">Aperçu de la fiche produit</div>
-                <div className="flex gap-4 items-start">
+                <div className="flex flex-col sm:flex-row gap-4 items-start">
                   {form.images.filter(Boolean)[0] && (
-                    <img src={form.images.filter(Boolean)[0]} className="w-20 h-20 object-contain rounded-xl bg-background border border-border" />
+                    <img src={getSafeImageUrl(form.images.filter(Boolean)[0])} className="w-20 h-20 object-contain rounded-xl bg-background border border-border" />
                   )}
                   <div>
                     <div className="font-bold">{form.name || "Nom du produit"}</div>
                     <div className="text-muted-foreground text-sm">{form.brand} {form.model}</div>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
                       <span className="text-lg font-bold text-primary">{formatDZD(form.price)}</span>
                       {form.originalPrice && <span className="text-sm line-through text-muted-foreground">{formatDZD(form.originalPrice)}</span>}
                       {form.discount && <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold">-{form.discount}%</span>}
                     </div>
-                    <div className="flex gap-2 mt-1">
+                    <div className="flex flex-wrap gap-2 mt-1">
                       {form.featured && <span className="text-xs bg-yellow-100 text-yellow-600 px-2 py-0.5 rounded-full">★ Populaire</span>}
                       {form.onSale && <span className="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full">Promo</span>}
                       <span className={cn("text-xs px-2 py-0.5 rounded-full", form.stock > 0 ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600")}>
@@ -241,20 +350,35 @@ function ProductForm({ initial, onClose }: { initial: Product | null; onClose: (
 
 export default function ManageProducts() {
   const { data: productsData, isLoading } = useListProducts({ limit: 200 });
+  const { data: cats } = useListCategories();
   const qc = useQueryClient();
   const { toast } = useToast();
   const [editing, setEditing] = useState<Product | null | "new">(null);
   const [search, setSearch] = useState("");
+  const [filterCategory, setFilterCategory] = useState<number | null>(null);
 
-  const { mutate: deleteProduct } = useDeleteProduct({
+  const { mutate: deleteProduct, isPending: isDeleting } = useDeleteProduct({
     mutation: {
-      onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/products"] }); toast({ title: "Produit supprimé" }); },
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: ["/api/products"] });
+        toast({ title: "Produit supprimé", description: "Le produit a été retiré avec succès." });
+      },
+      onError: (err: any) => {
+        console.error("Delete error:", err);
+        toast({ 
+          title: "Erreur de suppression", 
+          description: err.message || "Impossible de supprimer هذا المنتج. قد يكون مرتبطاً بطلبات شراء سابقة.",
+          variant: "destructive" 
+        });
+      }
     },
   });
 
-  const filtered = (productsData?.products || []).filter(p =>
-    !search || p.name.toLowerCase().includes(search.toLowerCase()) || (p.brand || "").toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = (productsData?.products || []).filter(p => {
+    const matchesSearch = !search || p.name.toLowerCase().includes(search.toLowerCase()) || (p.brand || "").toLowerCase().includes(search.toLowerCase());
+    const matchesCategory = !filterCategory || p.categoryId === filterCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <AdminLayout>
@@ -263,13 +387,34 @@ export default function ManageProducts() {
           <h1 className="text-3xl font-display font-bold">Produits</h1>
           <p className="text-muted-foreground mt-2">{productsData?.total || 0} produits dans le catalogue.</p>
         </div>
-        <Button onClick={() => setEditing("new")} className="gap-2"><Plus className="w-5 h-5" />Ajouter un produit</Button>
+        <Button onClick={() => setEditing("new")} className="gap-2 w-full sm:w-auto"><Plus className="w-5 h-5" />Ajouter un produit</Button>
       </div>
 
-      {/* Search */}
-      <div className="mb-4">
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher un produit..."
-          className="w-full max-w-sm px-4 py-2.5 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-4">
+        <div className="relative flex-1 max-w-sm">
+          <input 
+            value={search} 
+            onChange={e => setSearch(e.target.value)} 
+            placeholder="Rechercher un produit..."
+            className="w-full px-4 py-2.5 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" 
+          />
+        </div>
+        <div className="relative w-full sm:w-64">
+          <select 
+            value={filterCategory || ""} 
+            onChange={e => setFilterCategory(e.target.value ? Number(e.target.value) : null)}
+            className="w-full px-4 py-2.5 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 appearance-none"
+          >
+            <option value="">Toutes les catégories</option>
+            {cats?.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+          <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-muted-foreground">
+            <Tag className="w-4 h-4" />
+          </div>
+        </div>
       </div>
 
       <Card className="overflow-hidden">
@@ -293,7 +438,7 @@ export default function ManageProducts() {
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-12 h-12 rounded-xl border border-border bg-secondary flex items-center justify-center shrink-0 overflow-hidden">
                         {product.images?.[0] ? (
-                          <img src={product.images[0]} className="w-full h-full object-contain p-1" />
+                          <img src={getSafeImageUrl(product.images[0])} className="w-full h-full object-contain p-1" />
                         ) : <Package className="w-6 h-6 text-muted-foreground" />}
                       </div>
                       <div className="min-w-0">

@@ -16,7 +16,8 @@ router.post("/login", async (req, res) => {
     const body = AdminLoginBody.parse(req.body);
 
     if (body.username !== ADMIN_USERNAME || body.password !== ADMIN_PASSWORD) {
-      return res.status(401).json({ error: "Unauthorized", message: "Invalid credentials" });
+      res.status(401).json({ error: "Unauthorized", message: "Invalid credentials" });
+      return;
     }
 
     const token = jwt.sign({ username: body.username, role: "admin" }, JWT_SECRET, { expiresIn: "7d" });
