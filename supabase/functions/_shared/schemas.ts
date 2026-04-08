@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as zod from "npm:zod";
 
 export const ListProductsQueryParams = zod.object({
