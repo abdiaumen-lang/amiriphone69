@@ -1,8 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import path from 'path';
 
-// This script migrates images from local public/uploads to Supabase Storage
+// Dependency-free script to migrate images to Supabase Storage via REST API
 const SUPABASE_URL = 'https://abncjqujfmnzucstuadu.supabase.co';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const UPLOADS_DIR = './artifacts/api-server/public/uploads';
@@ -12,8 +11,6 @@ if (!SUPABASE_SERVICE_ROLE_KEY) {
   console.error('Error: SUPABASE_SERVICE_ROLE_KEY environment variable is required.');
   process.exit(1);
 }
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 async function migrate() {
   if (!fs.existsSync(UPLOADS_DIR)) {
@@ -29,19 +26,30 @@ async function migrate() {
     if (!fs.statSync(filePath).isFile()) continue;
 
     console.log(`Uploading ${file}...`);
-    const fileContent = fs.readFileSync(filePath);
+    const fileBuffer = fs.readFileSync(filePath);
     
-    const { data, error } = await supabase.storage
-      .from(BUCKET_NAME)
-      .upload(file, fileContent, {
-        upsert: true,
-        contentType: getContentType(file)
+    // Using Supabase REST API directly
+    const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${BUCKET_NAME}/${file}`;
+    
+    try {
+      const response = await fetch(uploadUrl, {
+        method: 'POST', // Use PUT to overwrite, POST creates new
+        headers: {
+          'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          'Content-Type': getContentType(file),
+          'x-upsert': 'true' // Supabase specific header to overwrite
+        },
+        body: fileBuffer
       });
 
-    if (error) {
-      console.error(`Failed to upload ${file}:`, error.message);
-    } else {
-      console.log(`Uploaded ${file} successfully.`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Failed to upload ${file}: ${response.status} ${response.statusText} - ${errorText}`);
+      } else {
+        console.log(`Uploaded ${file} successfully.`);
+      }
+    } catch (err) {
+      console.error(`Error uploading ${file}:`, err.message);
     }
   }
 }
