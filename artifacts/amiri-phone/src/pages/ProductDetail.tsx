@@ -199,7 +199,7 @@ export default function ProductDetail() {
                 </div>
 
                 {/* Description Media (Images/Videos) */}
-                {product.descriptionMedia && Array.isArray(product.descriptionMedia) && product.descriptionMedia.length > 0 && (
+                {(product as any).descriptionMedia && Array.isArray((product as any).descriptionMedia) && (product as any).descriptionMedia.length > 0 && (
                   <div className="mt-16 space-y-16">
                     <div className="flex items-center gap-4">
                        <h3 className="text-muted-foreground font-display text-xs uppercase tracking-[0.3em] font-medium whitespace-nowrap">Expérience Visuelle</h3>
@@ -207,7 +207,7 @@ export default function ProductDetail() {
                     </div>
 
                     <div className="space-y-16 sm:space-y-24">
-                      {(product.descriptionMedia as any[]).map((media, i) => (
+                      {((product as any).descriptionMedia as any[]).map((media, i) => (
                         <motion.div 
                           key={i}
                           initial={{ opacity: 0, y: 30 }}

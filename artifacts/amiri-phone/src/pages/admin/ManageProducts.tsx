@@ -69,7 +69,7 @@ function ProductForm({ initial, onClose }: { initial: Product | null; onClose: (
       brand: initial.brand || "",
       model: initial.model || "",
       specs: (initial.specs as Record<string, string>) || {},
-      descriptionMedia: (initial.descriptionMedia as any[]) || [],
+      descriptionMedia: ((initial as any).descriptionMedia as any[]) || [],
     };
   });
 
