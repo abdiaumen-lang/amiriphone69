@@ -1,0 +1,4 @@
+project_id = "abncjqujfmnzucstuadu"
+
+[functions.api]
+verify_jwt = false # We handle auth inside the app if needed

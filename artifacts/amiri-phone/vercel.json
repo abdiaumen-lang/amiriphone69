@@ -5,11 +5,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://REPLACE_WITH_YOUR_API_URL/api/:path*"
+      "destination": "https://abncjqujfmnzucstuadu.supabase.co/functions/v1/api/:path*"
     },
     {
       "source": "/uploads/:path*",
-      "destination": "https://REPLACE_WITH_YOUR_API_URL/uploads/:path*"
+      "destination": "https://abncjqujfmnzucstuadu.supabase.co/storage/v1/object/public/uploads/:path*"
     },
     {
       "source": "/(.*)",
