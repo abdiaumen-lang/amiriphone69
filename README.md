@@ -8,22 +8,22 @@
 <a name="english"></a>
 ## English
 
-A modern, responsive e-commerce platform tailored for the Algerian market, specializing in mobile phones and accessories. This project features a robust storefront and a comprehensive administrative dashboard.
+A modern, responsive e-commerce platform tailored for the Algerian market, specializing in mobile phones and accessories. This project features a robust storefront and a comprehensive administrative dashboard, now fully powered by **Supabase Edge Functions**.
 
 ### 🌟 Key Features
-- **Smart Catalog**: Browsing products by categories (Phones, Accessories, etc.) with advanced filtering.
+- **Smart Catalog**: Browsing products by categories (Phones, Accessories, etc.) with advanced filtering and edge caching.
 - **Dynamic Cart**: Real-time shopping cart management and session-based persistence.
-- **Checkout Flow**: Simple and localized checkout process for the Algerian market.
+- **Checkout Flow**: Simple and localized checkout process with Wilayas/Communes data for Algeria.
 - **Admin Dashboard**: Full control over products, categories, orders, and customer reviews.
-- **Media Management**: Upload and manage product images and promotional videos.
+- **Modern Backend**: Serverless architecture using **Supabase Edge Functions** (Hono + Deno).
 - **Responsive Design**: Fully optimized for mobile, tablet, and desktop viewing.
 
 ### 🛠 Tech Stack
-- **Frontend**: React.js with Vite, Tailwind CSS (or Custom CSS), Wouter for routing.
-- **Backend**: Node.js & Express.
-- **Database**: PostgreSQL (Neon/Supabase).
-- **Icons**: Lucide React & FontAwesome.
-- **Deployment**: Vercel (Frontend), Railway (Backend).
+- **Frontend**: React.js with Vite, Tailwind CSS.
+- **Backend**: Supabase Edge Functions (Hono + Deno).
+- **Database**: PostgreSQL (Neon).
+- **Storage**: Supabase Storage (for product images).
+- **Deployment**: Vercel (Frontend), Supabase (Backend).
 
 ### 🚀 Quick Start
 1. **Clone the repo**:
@@ -44,21 +44,21 @@ A modern, responsive e-commerce platform tailored for the Algerian market, speci
 <a name="arabic"></a>
 ## العربية
 
-منصة تجارة إلكترونية حديثة ومتجاوبة مصممة خصيصاً للسوق الجزائري، متخصصة في الهواتف المحمولة وإكسسواراتها. يتميز هذا المشروع بواجهة متجر قوية ولوحة تحكم إدارية شاملة.
+منصة تجارة إلكترونية حديثة ومتجاوبة مصممة خصيصاً للسوق الجزائري، متخصصة في الهواتف المحمولة وإكسسواراتها. تم ترحيل المشروع بالكامل ليعمل باستخدام **Supabase Edge Functions** لضمان أقصى سرعة وأداء.
 
 ### 🌟 المميزات الرئيسية
-- **كتالوج ذكي**: تصفح المنتجات حسب الفئات (هواتف، إكسسوارات، إلخ) مع خيارات تصفية متقدمة.
+- **كتالوج ذكي**: تصفح المنتجات حسب الفئات مع سرعة استجابة فائقة بفضل نظام التخزين المؤقت (Caching).
 - **عربة تسوق ديناميكية**: إدارة سلة التسوق في الوقت الفعلي مع حفظ الجلسة.
-- **نظام الطلب**: عملية شراء مبسطة ومناسبة للسوق المحلي.
+- **نظام الطلب**: عملية شراء مبسطة تدعم كافة الولايات والبلديات الجزائرية.
 - **لوحة تحكم المسؤول**: تحكم كامل في المنتجات، الفئات، الطلبات، ومراجعات العملاء.
-- **إدارة الوسائط**: رفع وإدارة صور المنتجات وفيديوهات ترويجية.
-- **تصميم متجاوب**: تجربة مستخدم مثالية على الهواتف والأجهزة اللوحية والحواسيب.
+- **واجهة خلفية حديثة**: بنية Serverless باستخدام **Supabase Edge Functions**.
+- **تصميم متجاوب**: تجربة مستخدم مثالية على جميع أنواع الأجهزة.
 
 ### 🛠 التقنيات المستخدمة
 - **الواجهة الأمامية**: React.js مع Vite، و Tailwind CSS.
-- **الواجهة الخلفية**: Node.js مع Express.
-- **قاعدة البيانات**: PostgreSQL (Neon/Supabase).
-- **النشر**: Vercel (للواجهة الأمامية)، Railway (للواجهة الخلفية).
+- **الواجهة الخلفية**: Supabase Edge Functions (Hono & Deno).
+- **قاعدة البيانات**: PostgreSQL (Neon).
+- **النشر**: Vercel (للواجهة الأمامية)، Supabase (للواجهة الخلفية).
 
 ### 🚀 التشغيل السريع
 1. **تحميل المشروع**:
@@ -79,3 +79,4 @@ A modern, responsive e-commerce platform tailored for the Algerian market, speci
 ## 📜 License / الرخصة
 This project is licensed under the [MIT License](LICENSE).
 هذا المشروع مرخص بموجب رخصة [MIT](LICENSE).
+
