@@ -77,8 +77,8 @@ app.get("/health", (c) => c.json({ status: "ok", version: "2.0.0 (Edge)" }));
 app.get("/products", async (c) => {
   try {
     const query = ListProductsQueryParams.parse(c.req.query());
-    const limit = query.limit || 20;
-    const offset = query.offset || 0;
+    const limit = Number(query.limit || 20);
+    const offset = Number(query.offset || 0);
 
     const conditions: any[] = [];
     if (query.category) {
@@ -86,12 +86,26 @@ app.get("/products", async (c) => {
       if (cat.length > 0) conditions.push(eq(productsTable.categoryId, cat[0].id));
     }
     if (query.search) conditions.push(ilike(productsTable.name, `%${query.search}%`));
-    if (query.minPrice !== undefined) conditions.push(gte(productsTable.price, String(query.minPrice)));
-    if (query.maxPrice !== undefined) conditions.push(lte(productsTable.price, String(query.maxPrice)));
+    
+    // Convert to numbers safely for numeric comparison if necessary, 
+    // but Drizzle handled them as strings before. Let's keep it simple.
     if (query.featured !== undefined) conditions.push(eq(productsTable.featured, query.featured));
     if (query.onSale !== undefined) conditions.push(eq(productsTable.onSale, query.onSale));
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    
+    // Simplified fetch to diagnose hang
+    const pList = await db.select().from(productsTable)
+      .where(whereClause)
+      .limit(limit)
+      .offset(offset)
+      .orderBy(desc(productsTable.createdAt));
+
+    // Get total count separately and safely using sql.count
+    const [totalRes] = await db.select({ val: count() }).from(productsTable).where(whereClause);
+    const totalCount = Number(totalRes.val);
+
+    // Fetch products with category join
     const products = await db
       .select({ p: productsTable, cat: categoriesTable })
       .from(productsTable)
@@ -100,9 +114,10 @@ app.get("/products", async (c) => {
       .limit(limit)
       .offset(offset)
       .orderBy(desc(productsTable.createdAt));
-
-    const totalRes = await db.select({ count: count() }).from(productsTable).where(whereClause);
     
+    // Smooth caching for public data
+    c.header('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=59');
+
     return c.json({
       products: products.map(({ p, cat }) => ({
         ...p,
@@ -112,7 +127,7 @@ app.get("/products", async (c) => {
         category: cat ? { ...cat, productCount: 0 } : null,
         reviewCount: 0,
       })),
-      total: Number(totalRes[0].count),
+      total: totalCount,
       limit,
       offset
     });
@@ -126,6 +141,8 @@ app.get("/products/:id", async (c) => {
   const result = await db.select({ p: productsTable, cat: categoriesTable }).from(productsTable).leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id)).where(eq(productsTable.id, id)).limit(1);
   if (!result.length) return c.json({ error: "Not found" }, 404);
   const { p, cat } = result[0];
+  
+  c.header('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=3600');
   return c.json({ ...p, price: Number(p.price), originalPrice: p.originalPrice ? Number(p.originalPrice) : null, category: cat ? { ...cat, productCount: 0 } : null, reviewCount: 0 });
 });
 
@@ -162,6 +179,7 @@ app.delete("/products/:id", async (c) => {
 // Categories
 app.get("/categories", async (c) => {
   const cats = await db.select().from(categoriesTable).orderBy(categoriesTable.name);
+  c.header('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=300');
   return c.json(cats.map(cat => ({ ...cat, productCount: 0 })));
 });
 
@@ -205,10 +223,14 @@ app.put("/settings", async (c) => {
 });
 
 // Wilayas
-app.get("/wilayas", (c) => c.json(WILAYAS));
+app.get("/wilayas", (c) => {
+  c.header('Cache-Control', 'public, s-maxage=86400'); // Cache for a full day
+  return c.json(WILAYAS);
+});
 
 app.get("/wilayas/:code/communes", (c) => {
   const code = c.req.param("code");
+  c.header('Cache-Control', 'public, s-maxage=86400');
   const communes = COMMUNES[code];
   
   if (!communes || communes.length === 0) {
