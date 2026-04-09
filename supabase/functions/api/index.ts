@@ -4,7 +4,7 @@ import { cors } from "hono/cors";
 import { db, productsTable, categoriesTable, ordersTable, orderItemsTable, settingsTable, reviewsTable } from "../_shared/db.ts";
 import { eq, ilike, gte, lte, and, sql, count, desc, inArray } from "drizzle-orm";
 import { ListProductsQueryParams, CreateProductBody, CreateOrderBody, AdminLoginBody, CreateCategoryBody } from "../_shared/schemas.ts";
-import { WILAYAS } from "../_shared/data/wilayas.ts";
+import { WILAYAS, COMMUNES } from "../_shared/data/wilayas.ts";
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
@@ -206,6 +206,26 @@ app.put("/settings", async (c) => {
 
 // Wilayas
 app.get("/wilayas", (c) => c.json(WILAYAS));
+
+app.get("/wilayas/:code/communes", (c) => {
+  const code = c.req.param("code");
+  const communes = COMMUNES[code];
+  
+  if (!communes || communes.length === 0) {
+    const wilaya = WILAYAS.find(w => w.code === code);
+    if (!wilaya) return c.json({ error: "Wilaya not found" }, 404);
+    
+    // Fallback for missing data: return "Whole Wilaya"
+    return c.json([{ 
+      code: `${code}000`, 
+      name: "Toute la wilaya", 
+      nameAr: "كل الولاية", 
+      wilayaCode: code 
+    }]);
+  }
+  
+  return c.json(communes);
+});
 
 // Orders
 app.post("/orders", async (c) => {
