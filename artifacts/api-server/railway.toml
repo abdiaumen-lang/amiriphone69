@@ -1,8 +1,0 @@
-[build]
-builder = "nixpacks"
-buildCommand = "pnpm --filter @workspace/api-server run build"
-
-[deploy]
-startCommand = "node artifacts/api-server/dist/index.cjs"
-restartPolicyType = "on-failure"
-restartPolicyMaxRetries = 3
