@@ -8,7 +8,9 @@ import {
   ChevronRight, Star, ShoppingBag, Smartphone, FolderTree
 } from "lucide-react";
 import { useListProducts, useGetSettings, useListCategories } from "@workspace/api-client-react";
+import { useHomeData } from "@/hooks/useHomeData";
 import { formatDZD, cn, getSafeImageUrl } from "@/lib/utils";
+
 
 function Ticker({ images, speed = 30, height = 64 }: { images: string[]; speed?: number, height?: number }) {
   if (!images || images.length === 0) return null;
@@ -45,17 +47,18 @@ function Ticker({ images, speed = 30, height = 64 }: { images: string[]; speed?:
 }
 
 export default function Home() {
-  const { data: featuredProducts, isLoading } = useListProducts({ featured: true, limit: 8 });
-  const { data: categoriesData } = useListCategories();
-  const categories = categoriesData || [];
-  const { data: latestProductsData } = useListProducts({ limit: 1 });
-  const latestProducts = latestProductsData?.products || [];
-
-  const { data } = useGetSettings();
-  const settings = data as Record<string, any> | undefined;
+  const { data: homeData, isLoading: isHomeLoading } = useHomeData();
+  
+  const featuredProducts = homeData?.featuredProducts || { products: [], total: 0 };
+  const categories = homeData?.categories || [];
+  const latestProducts = homeData?.latestProducts || [];
+  const settings = homeData?.settings as Record<string, any> | undefined;
+  
+  const isLoading = isHomeLoading;
   const content = settings?.pageContent || {};
   const features = settings?.features || {};
   const hero = content.hero || {};
+
 
   return (
     <AppLayout>

@@ -15,7 +15,17 @@ const app = new Hono().basePath("/api");
 app.use("*", cors());
 
 // --- Helper Functions ---
+// --- Caching Logic ---
+let settingsCache: Record<string, any> | null = null;
+let categoriesCache: any[] | null = null;
+let lastCacheUpdate = 0;
+const CACHE_TTL = 120_000; // 2 minutes in-memory cache
+
 async function getSettingsFromDb() {
+  if (settingsCache && (Date.now() - lastCacheUpdate < CACHE_TTL)) {
+    return settingsCache;
+  }
+
   const rows = await db.select().from(settingsTable);
   const settingsMap = new Map(rows.map(r => [r.key, r.value]));
   const result: Record<string, any> = {};
@@ -28,8 +38,21 @@ async function getSettingsFromDb() {
       }
     }
   }
+  
+  settingsCache = result;
+  lastCacheUpdate = Date.now();
   return result;
 }
+
+async function getCategoriesCached() {
+  if (categoriesCache && (Date.now() - lastCacheUpdate < CACHE_TTL)) {
+    return categoriesCache;
+  }
+  const cats = await db.select().from(categoriesTable).orderBy(categoriesTable.name);
+  categoriesCache = cats.map(cat => ({ ...cat, productCount: 0 }));
+  return categoriesCache;
+}
+
 
 function generateOrderNumber(): string {
   const date = new Date();
@@ -82,44 +105,36 @@ app.get("/products", async (c) => {
 
     const conditions: any[] = [];
     if (query.category) {
-      const cat = await db.select().from(categoriesTable).where(eq(categoriesTable.slug, query.category)).limit(1);
-      if (cat.length > 0) conditions.push(eq(productsTable.categoryId, cat[0].id));
+      // Find category ID by slug - should stay cached or be joined
+      const cats = await getCategoriesCached();
+      const cat = cats.find(k => k.slug === query.category);
+      if (cat) conditions.push(eq(productsTable.categoryId, cat.id));
     }
     if (query.search) conditions.push(ilike(productsTable.name, `%${query.search}%`));
-    
-    // Convert to numbers safely for numeric comparison if necessary, 
-    // but Drizzle handled them as strings before. Let's keep it simple.
     if (query.featured !== undefined) conditions.push(eq(productsTable.featured, query.featured));
     if (query.onSale !== undefined) conditions.push(eq(productsTable.onSale, query.onSale));
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     
-    // Simplified fetch to diagnose hang
-    const pList = await db.select().from(productsTable)
-      .where(whereClause)
-      .limit(limit)
-      .offset(offset)
-      .orderBy(desc(productsTable.createdAt));
+    // Run count and products fetch in parallel
+    const [totalRes, productsRaw] = await Promise.all([
+      db.select({ val: count() }).from(productsTable).where(whereClause),
+      db.select({ p: productsTable, cat: categoriesTable })
+        .from(productsTable)
+        .leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
+        .where(whereClause)
+        .limit(limit)
+        .offset(offset)
+        .orderBy(desc(productsTable.createdAt))
+    ]);
 
-    // Get total count separately and safely using sql.count
-    const [totalRes] = await db.select({ val: count() }).from(productsTable).where(whereClause);
-    const totalCount = Number(totalRes.val);
+    const totalCount = Number(totalRes[0]?.val ?? 0);
 
-    // Fetch products with category join
-    const products = await db
-      .select({ p: productsTable, cat: categoriesTable })
-      .from(productsTable)
-      .leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
-      .where(whereClause)
-      .limit(limit)
-      .offset(offset)
-      .orderBy(desc(productsTable.createdAt));
-    
     // Smooth caching for public data
-    c.header('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=59');
+    c.header('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
 
     return c.json({
-      products: products.map(({ p, cat }) => ({
+      products: productsRaw.map(({ p, cat }) => ({
         ...p,
         price: Number(p.price),
         originalPrice: p.originalPrice ? Number(p.originalPrice) : null,
@@ -135,6 +150,7 @@ app.get("/products", async (c) => {
     return c.json({ error: err.message }, 400);
   }
 });
+
 
 app.get("/products/:id", async (c) => {
   const id = parseInt(c.req.param("id"));
@@ -178,10 +194,11 @@ app.delete("/products/:id", async (c) => {
 
 // Categories
 app.get("/categories", async (c) => {
-  const cats = await db.select().from(categoriesTable).orderBy(categoriesTable.name);
-  c.header('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=300');
-  return c.json(cats.map(cat => ({ ...cat, productCount: 0 })));
+  const cats = await getCategoriesCached();
+  c.header('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+  return c.json(cats);
 });
+
 
 app.post("/categories", async (c) => {
   const body = CreateCategoryBody.parse(await c.req.json());
@@ -206,7 +223,47 @@ app.delete("/categories/:id", async (c) => {
 // Settings
 app.get("/settings", async (c) => {
   const settings = await getSettingsFromDb();
+  c.header('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
   return c.json(settings);
+});
+
+// Home Data Bundle (To avoid 4 parallel requests on cold starts)
+app.get("/home-data", async (c) => {
+  const [featuredRes, categories, latestProductsRaw, settings] = await Promise.all([
+    db.select({ p: productsTable, cat: categoriesTable })
+      .from(productsTable)
+      .leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
+      .where(eq(productsTable.featured, true))
+      .limit(8)
+      .orderBy(desc(productsTable.createdAt)),
+    getCategoriesCached(),
+    db.select().from(productsTable).orderBy(desc(productsTable.createdAt)).limit(1),
+    getSettingsFromDb()
+  ]);
+
+  const featuredProducts = featuredRes.map(({ p, cat }) => ({
+    ...p,
+    price: Number(p.price),
+    originalPrice: p.originalPrice ? Number(p.originalPrice) : null,
+    discount: p.discount ? Number(p.discount) : null,
+    category: cat ? { ...cat, productCount: 0 } : null,
+    reviewCount: 0,
+  }));
+
+  const latestProducts = latestProductsRaw.map(p => ({
+    ...p,
+    price: Number(p.price),
+    originalPrice: p.originalPrice ? Number(p.originalPrice) : null,
+  }));
+
+  c.header('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+  
+  return c.json({
+    featuredProducts: { products: featuredProducts, total: featuredProducts.length },
+    categories,
+    latestProducts,
+    settings
+  });
 });
 
 app.put("/settings", async (c) => {
@@ -219,8 +276,11 @@ app.put("/settings", async (c) => {
       target: settingsTable.key, set: { value: row.value, updatedAt: row.updatedAt },
     });
   }
+  // Invalidate cache
+  settingsCache = null;
   return c.json(await getSettingsFromDb());
 });
+
 
 // Wilayas
 app.get("/wilayas", (c) => {
